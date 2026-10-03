@@ -3,6 +3,54 @@
 项目名称
 宠医通（PetCare）宠物医院管理系统
 
+## 环境要求与快速开始
+
+工程位于 `monolith/`：模块化单体，Java 25 + Spring Boot 4.0.x。
+
+### 环境要求
+
+| 项 | 要求 | 校验命令 |
+|---|---|---|
+| JDK | 25（Enforcer 强制 `[25,26)`） | `java -version` |
+| Maven | 3.9 及以上 | `mvn -version` |
+
+> 本地构建说明：本机无法访问 Maven Central，本地请用系统 `mvn`（已配置阿里云镜像与本地仓库）；`monolith/mvnw` 的 distributionUrl 指向 Maven Central，仅供 CI 使用。
+
+### 启动
+
+```bash
+cd monolith
+mvn spring-boot:run
+```
+
+先打包再运行：
+
+```bash
+cd monolith
+mvn -B verify
+java -jar target/monolith-0.0.1-SNAPSHOT.jar
+```
+
+### 测试
+
+```bash
+cd monolith
+mvn -B verify
+```
+
+`verify` 依次执行：单元/集成测试、Spring Modulith 模块结构校验、ArchUnit 架构规则、Spotless 格式检查、JaCoCo 覆盖率报告、Maven Enforcer（强制 JDK 25）。
+
+### 访问地址
+
+应用默认监听 `8080` 端口。
+
+| 接口 | 地址 | 预期响应 |
+|---|---|---|
+| 运行状态（问候接口） | `GET http://localhost:8080/api/system/status` | `{"application":"monolith","status":"UP","version":"0.0.1-SNAPSHOT"}` |
+| 健康检查 | `GET http://localhost:8080/actuator/health` | `{"groups":["liveness","readiness"],"status":"UP"}` |
+| 就绪探针 | `GET http://localhost:8080/actuator/health/readiness` | `{"status":"UP"}` |
+| 存活探针 | `GET http://localhost:8080/actuator/health/liveness` | `{"status":"UP"}` |
+
 要解决的实际问题
 城市养宠家庭越来越多，宠物医院通常面临：
 
