@@ -1,0 +1,15 @@
+# 测试专用配置：提供固定 JWT 密钥，避免依赖外部环境变量。仅用于测试，绝不用于生产。
+petcare:
+  security:
+    jwt:
+      secret: test-only-jwt-secret-must-be-at-least-32-characters
+      issuer: https://petcare.test
+      access-ttl: PT15M
+      refresh-ttl: P7D
+
+# 打开 Hibernate 统计，用于断言历史查询非 N+1（查询条数不随记录数增长）。
+spring:
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true

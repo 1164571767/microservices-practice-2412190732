@@ -24,26 +24,39 @@ class ArchitectureTest {
   }
 
   @Test
-  void domainAndApplicationDoNotDependOnWebOrInfrastructure() {
+  void innerLayersDoNotDependOnControllerOrConfig() {
     ArchRule rule =
         noClasses()
             .that()
-            .resideInAnyPackage("..domain..", "..application..")
+            .resideInAnyPackage("..entity..", "..repository..", "..service..")
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage("..web..", "..infrastructure..")
+            .resideInAnyPackage("..controller..", "..config..")
             .allowEmptyShould(true);
     rule.check(classes);
   }
 
   @Test
-  void restControllersResideInWebPackage() {
+  void restControllersResideInControllerPackage() {
     ArchRule rule =
         classes()
             .that()
             .areAnnotatedWith(RestController.class)
             .should()
-            .resideInAPackage("..web..");
+            .resideInAPackage("..controller..");
+    rule.check(classes);
+  }
+
+  @Test
+  void identityInternalsDoNotLeakToOtherModules() {
+    ArchRule rule =
+        noClasses()
+            .that()
+            .resideOutsideOfPackage("..identity..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("..identity.common..")
+            .allowEmptyShould(true);
     rule.check(classes);
   }
 }
