@@ -1,0 +1,13 @@
+# Claude Code local/runtime state
+.claude/runtime/
+.claude/settings.local.json
+
+# IDE（本地工作区元数据，不同机器不一致，不入库）
+.idea/
+*.iml
+
+# 本地环境文件与日志（.env.example 需要入库）
+.env
+.env.*
+!.env.example
+*.log
