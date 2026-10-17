@@ -1,6 +1,22 @@
 spring:
   application:
     name: monolith
+  config:
+    import: optional:file:./.env[.properties]
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:petcare}?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
   threads:
     virtual:
       enabled: false
@@ -10,12 +26,30 @@ info:
     name: ${spring.application.name}
     version: 0.0.1-SNAPSHOT
 
+petcare:
+  security:
+    jwt:
+      # 必须由环境变量提供且至少 32 字符；不设默认值以在后端误配置时快速失败。
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:https://petcare.local}
+      access-ttl: ${JWT_ACCESS_TTL:PT15M}
+      refresh-ttl: ${JWT_REFRESH_TTL:P7D}
+    bootstrap-admin:
+      # 可选：全新环境引导首个管理员。三项均提供时才创建。
+      username: ${BOOTSTRAP_ADMIN_USERNAME:}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+      phone: ${BOOTSTRAP_ADMIN_PHONE:}
+      display-name: ${BOOTSTRAP_ADMIN_DISPLAY_NAME:系统管理员}
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
       probes:
         enabled: true
+  tracing:
+    sampling:
+      probability: 1.0

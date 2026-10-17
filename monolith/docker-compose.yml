@@ -1,0 +1,4 @@
+# PetCare 开发基础设施。
+# 说明：数据库采用本机原生安装的 MySQL 8（见 docs/adr/0008），不再由此 compose 提供。
+# 后续 Redis / RustFS 等服务按需在此添加（计划运行于远程 VM 的 Docker）。
+services: {}
