@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      # CI 专用的临时 MySQL；凭据仅用于该一次性容器，不是本地开发凭据。
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: petcare
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: petcare
+      DB_USER: root
+      DB_PASSWORD: root
+    defaults:
+      run:
+        working-directory: monolith
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Verify
+        run: |
+          chmod +x ./mvnw || true
+          ./mvnw -B verify
