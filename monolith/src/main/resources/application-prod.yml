@@ -1,4 +1,16 @@
+# 生产 profile：结构化日志 + 默认关闭 OpenAPI 文档端点，避免对外暴露完整接口面。
+# 如确需在生产启用，必须显式设置 OPENAPI_ENABLED=true 且 OPENAPI_PUBLIC=false（要求认证）。
 logging:
   structured:
     format:
       console: ecs
+
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:false}
+  swagger-ui:
+    enabled: ${OPENAPI_ENABLED:false}
+
+petcare:
+  openapi:
+    public: ${OPENAPI_PUBLIC:false}

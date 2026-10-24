@@ -27,6 +27,9 @@ info:
     version: 0.0.1-SNAPSHOT
 
 petcare:
+  openapi:
+    # 默认不公开：只有显式设置 OPENAPI_PUBLIC=true（本地开发/演示）才允许匿名读取文档。
+    public: ${OPENAPI_PUBLIC:false}
   security:
     jwt:
       # 必须由环境变量提供且至少 32 字符；不设默认值以在后端误配置时快速失败。
@@ -40,6 +43,28 @@ petcare:
       password: ${BOOTSTRAP_ADMIN_PASSWORD:}
       phone: ${BOOTSTRAP_ADMIN_PHONE:}
       display-name: ${BOOTSTRAP_ADMIN_DISPLAY_NAME:系统管理员}
+  notification:
+    revisit-reminder:
+      # 每日扫描「就诊日 = 提醒日 − delay-days」的病历，为主人生成复诊提醒；重复执行不重复生成。
+      enabled: ${REVISIT_REMINDER_ENABLED:true}
+      delay-days: ${REVISIT_REMINDER_DELAY_DAYS:7}
+      cron: "${REVISIT_REMINDER_CRON:0 0 9 * * *}"
+      zone: ${REVISIT_REMINDER_ZONE:Asia/Shanghai}
+  reporting:
+    # 统计日按该时区切分；查询区间含首尾，跨度上限防止无界聚合。
+    zone: ${REPORTING_ZONE:Asia/Shanghai}
+    max-range-days: ${REPORTING_MAX_RANGE_DAYS:366}
+
+springdoc:
+  api-docs:
+    # 代码优先生成 /v3/api-docs；不需要文档时可用 OPENAPI_ENABLED=false 整体关闭。
+    enabled: ${OPENAPI_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${OPENAPI_ENABLED:true}
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
 
 management:
   endpoints:

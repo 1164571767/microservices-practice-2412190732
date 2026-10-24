@@ -1,11 +1,18 @@
 # 测试专用配置：提供固定 JWT 密钥，避免依赖外部环境变量。仅用于测试，绝不用于生产。
 petcare:
+  openapi:
+    # 测试需要直接读取 /v3/api-docs 校验契约与实现同步。
+    public: true
   security:
     jwt:
       secret: test-only-jwt-secret-must-be-at-least-32-characters
       issuer: https://petcare.test
       access-ttl: PT15M
       refresh-ttl: P7D
+  notification:
+    revisit-reminder:
+      # 测试不经定时器触发复诊提醒，直接调用 RevisitReminderService#generateFor 以保证确定性。
+      enabled: false
 
 # 打开 Hibernate 统计，用于断言历史查询非 N+1（查询条数不随记录数增长）。
 spring:
