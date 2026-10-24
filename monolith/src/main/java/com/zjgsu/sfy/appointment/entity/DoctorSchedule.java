@@ -1,7 +1,10 @@
 package com.zjgsu.sfy.appointment.entity;
 
+import com.zjgsu.sfy.appointment.common.ScheduleState;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -12,7 +15,7 @@ import java.util.Objects;
 import java.util.UUID;
 import org.hibernate.annotations.UuidGenerator;
 
-/** 医生排班时段；同一医生的时段不允许重叠（DB 排除约束兜底）。 */
+/** 不覆盖修改原始时间；停止放号与停诊分别保留已有预约和历史。 */
 @Entity
 @Table(name = "doctor_schedule")
 public class DoctorSchedule {
@@ -32,6 +35,10 @@ public class DoctorSchedule {
 
   @Column(name = "slot_minutes", nullable = false)
   private int slotMinutes;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 24)
+  private ScheduleState state = ScheduleState.OPEN;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -78,6 +85,18 @@ public class DoctorSchedule {
 
   public boolean covers(Instant rangeStart, Instant rangeEnd) {
     return !rangeStart.isBefore(startAt) && !rangeEnd.isAfter(endAt);
+  }
+
+  public ScheduleState getState() {
+    return state;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public void changeState(ScheduleState target) {
+    this.state = Objects.requireNonNull(target);
   }
 
   public UUID getId() {

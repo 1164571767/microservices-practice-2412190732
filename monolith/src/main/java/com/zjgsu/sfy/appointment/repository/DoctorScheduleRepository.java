@@ -12,6 +12,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface DoctorScheduleRepository extends JpaRepository<DoctorSchedule, UUID> {
 
+  @Query("select s.doctorId from DoctorSchedule s where s.id=:id")
+  java.util.Optional<UUID> doctorId(@Param("id") UUID id);
+
   List<DoctorSchedule> findByDoctorIdOrderByStartAtAsc(UUID doctorId);
 
   /** 与 [rangeStart, rangeEnd) 有重叠的排班。 */
