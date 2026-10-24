@@ -37,14 +37,16 @@ public class IdentitySecurityConfig {
   }
 
   @Bean
-  public JwtDecoder jwtDecoder(JwtProperties properties) {
+  public JwtDecoder jwtDecoder(JwtProperties properties, UserRepository users) {
     NimbusJwtDecoder decoder =
         NimbusJwtDecoder.withSecretKey(properties.secretKey())
             .macAlgorithm(MacAlgorithm.HS256)
             .build();
     decoder.setJwtValidator(
         new DelegatingOAuth2TokenValidator<>(
-            JwtValidators.createDefaultWithIssuer(properties.issuer()), accessTokenOnly()));
+            JwtValidators.createDefaultWithIssuer(properties.issuer()),
+            accessTokenOnly(),
+            currentSession(users)));
     return decoder;
   }
 
@@ -69,5 +71,24 @@ public class IdentitySecurityConfig {
             ? OAuth2TokenValidatorResult.success()
             : OAuth2TokenValidatorResult.failure(
                 new OAuth2Error("invalid_token", "Not an access token", null));
+  }
+
+  private static OAuth2TokenValidator<Jwt> currentSession(UserRepository users) {
+    return token -> {
+      try {
+        Object version = token.getClaim("sv");
+        if (version instanceof Number number
+            && users
+                .findById(java.util.UUID.fromString(token.getSubject()))
+                .filter(user -> user.isActive() && user.getSessionVersion() == number.longValue())
+                .isPresent()) {
+          return OAuth2TokenValidatorResult.success();
+        }
+      } catch (IllegalArgumentException ignored) {
+        // Invalid subjects are rejected without exposing account details.
+      }
+      return OAuth2TokenValidatorResult.failure(
+          new OAuth2Error("invalid_token", "Session revoked", null));
+    };
   }
 }

@@ -18,7 +18,15 @@ public record UserProfile(
     roles = Set.copyOf(roles);
   }
 
+  public boolean isActiveOwner() {
+    return roles.contains(Role.OWNER) && status == UserStatus.ACTIVE;
+  }
+
   public boolean isDoctor() {
     return roles.contains(Role.DOCTOR);
+  }
+
+  public boolean isActiveDoctor() {
+    return isDoctor() && status == UserStatus.ACTIVE;
   }
 }

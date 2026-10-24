@@ -62,6 +62,9 @@ public class User {
   @Column(nullable = false)
   private long version;
 
+  @Column(name = "session_version", nullable = false)
+  private long sessionVersion;
+
   protected User() {}
 
   public static User create(
@@ -126,5 +129,30 @@ public class User {
 
   public Set<Role> getRoles() {
     return Set.copyOf(roles);
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public long getSessionVersion() {
+    return sessionVersion;
+  }
+
+  public void changePassword(String encodedPassword) {
+    passwordHash = encodedPassword;
+    sessionVersion++;
+  }
+
+  public void updateEmployee(String name, String phone, Set<Role> roles, UserStatus status) {
+    if (!this.roles.equals(roles) || this.status != status) sessionVersion++;
+    this.displayName = name.trim();
+    this.phone = phone.trim();
+    this.roles = new HashSet<>(roles);
+    this.status = status;
   }
 }

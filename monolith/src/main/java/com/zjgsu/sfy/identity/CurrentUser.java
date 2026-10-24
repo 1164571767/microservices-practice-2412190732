@@ -15,4 +15,22 @@ public record CurrentUser(UUID userId, String username, Set<Role> roles) {
   public boolean isClinicStaff() {
     return roles.contains(Role.DOCTOR) || roles.contains(Role.STAFF) || roles.contains(Role.ADMIN);
   }
+
+  /** 药房 / 管理员：可维护药品目录、调整库存与发药。 */
+  public boolean isPharmacyStaff() {
+    return roles.contains(Role.PHARMACY) || roles.contains(Role.ADMIN);
+  }
+
+  /** 前台 / 管理员：可生成账单、退款、作废与维护收费项目。 */
+  public boolean isBillingStaff() {
+    return roles.contains(Role.STAFF) || roles.contains(Role.ADMIN);
+  }
+
+  public boolean isAdmin() {
+    return roles.contains(Role.ADMIN);
+  }
+
+  public boolean isDoctor() {
+    return roles.contains(Role.DOCTOR);
+  }
 }

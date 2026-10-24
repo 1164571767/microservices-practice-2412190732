@@ -22,4 +22,20 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
       @Param("tokenHash") String tokenHash,
       @Param("now") Instant now,
       @Param("replacedBy") String replacedBy);
+
+  /** 只允许撤销本人名下的 refresh token；token 不存在或属于他人时受影响行数为 0（不泄露存在性）。 */
+  @Modifying
+  @Query(
+      "update RefreshToken t set t.revokedAt = :now"
+          + " where t.tokenHash = :tokenHash and t.userId = :userId and t.revokedAt is null")
+  int revokeIfActiveForUser(
+      @Param("tokenHash") String tokenHash,
+      @Param("userId") UUID userId,
+      @Param("now") Instant now);
+
+  /** token 重放检测命中时撤销该用户全部活跃 refresh token（token family），强制重新登录。 */
+  @Modifying
+  @Query(
+      "update RefreshToken t set t.revokedAt = :now where t.userId = :userId and t.revokedAt is null")
+  int revokeAllActiveForUser(@Param("userId") UUID userId, @Param("now") Instant now);
 }

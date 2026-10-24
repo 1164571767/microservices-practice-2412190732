@@ -6,8 +6,12 @@ import com.zjgsu.sfy.identity.CurrentUser;
 import com.zjgsu.sfy.identity.IdentityApi;
 import com.zjgsu.sfy.identity.UserProfile;
 import com.zjgsu.sfy.identity.common.Role;
+import com.zjgsu.sfy.identity.common.UserStatus;
 import com.zjgsu.sfy.identity.repository.UserRepository;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -29,8 +33,23 @@ public class IdentityApiImpl implements IdentityApi {
   }
 
   @Override
+  public java.util.Map<UUID, UserProfile> findUsers(Collection<UUID> userIds) {
+    if (userIds.isEmpty()) return java.util.Map.of();
+    return userRepository.findByIdIn(userIds).stream()
+        .map(UserProfiles::of)
+        .collect(java.util.stream.Collectors.toUnmodifiableMap(UserProfile::id, u -> u));
+  }
+
+  @Override
   public Optional<UserProfile> findUser(UUID userId) {
     return userRepository.findById(userId).map(UserProfiles::of);
+  }
+
+  @Override
+  public Optional<UserProfile> findUserByUsername(String username) {
+    return userRepository
+        .findByUsername(username.trim().toLowerCase(Locale.ROOT))
+        .map(UserProfiles::of);
   }
 
   @Override
@@ -39,6 +58,28 @@ public class IdentityApiImpl implements IdentityApi {
         .findById(userId)
         .map(UserProfiles::of)
         .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+  }
+
+  @Override
+  public List<UUID> findActiveUserIdsInRoles(Collection<String> roleNames) {
+    if (roleNames == null || roleNames.isEmpty()) {
+      return List.of();
+    }
+    Set<Role> roles = EnumSet.noneOf(Role.class);
+    for (String roleName : roleNames) {
+      if (roleName == null || roleName.isBlank()) {
+        continue;
+      }
+      try {
+        roles.add(Role.valueOf(roleName.trim().toUpperCase(Locale.ROOT)));
+      } catch (IllegalArgumentException ex) {
+        // 未知角色名忽略：调用方可能传入已下线或拼错的角色，不影响其它角色查询。
+      }
+    }
+    if (roles.isEmpty()) {
+      return List.of();
+    }
+    return userRepository.findIdsByStatusAndRoles(UserStatus.ACTIVE, roles);
   }
 
   @Override

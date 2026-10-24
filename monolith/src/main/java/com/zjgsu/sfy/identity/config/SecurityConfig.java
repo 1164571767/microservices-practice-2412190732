@@ -1,6 +1,7 @@
 package com.zjgsu.sfy.identity.config;
 
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,35 +22,45 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
   private static final String ROLE_PREFIX = "ROLE_";
+  private static final String[] OPENAPI_PATHS = {
+    "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+  };
 
   @Bean
   public SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       JwtAuthenticationConverter jwtAuthenticationConverter,
       RestAuthenticationEntryPoint authenticationEntryPoint,
-      RestAccessDeniedHandler accessDeniedHandler)
+      RestAccessDeniedHandler accessDeniedHandler,
+      @Value("${petcare.openapi.public:false}") boolean openApiPublic)
       throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
+        .addFilterBefore(
+            new IdentityAvailabilityFilter(),
+            org.springframework.security.oauth2.server.resource.web.authentication
+                .BearerTokenAuthenticationFilter.class)
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers(
-                        HttpMethod.POST,
-                        "/api/auth/register",
-                        "/api/auth/login",
-                        "/api/auth/refresh")
-                    .permitAll()
-                    .requestMatchers(
-                        HttpMethod.GET,
-                        "/api/system/status",
-                        "/actuator/health",
-                        "/actuator/health/**",
-                        "/actuator/info",
-                        "/error")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
+            auth -> {
+              auth.requestMatchers(
+                      HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh")
+                  .permitAll()
+                  .requestMatchers(
+                      HttpMethod.GET,
+                      "/actuator/health",
+                      "/actuator/health/**",
+                      "/actuator/info",
+                      "/error")
+                  .permitAll();
+              // 文档匿名访问由 OPENAPI_PUBLIC 显式开启（默认 false）；prod 默认关闭文档（见 application-prod.yml）。
+              if (openApiPublic) {
+                auth.requestMatchers(HttpMethod.GET, OPENAPI_PATHS).permitAll();
+              }
+              // Actuator 指标包含完整 URI 与业务计数，仅管理员可读（暴露面收敛）。
+              auth.requestMatchers("/actuator/metrics", "/actuator/metrics/**").hasRole("ADMIN");
+              auth.anyRequest().authenticated();
+            })
         .oauth2ResourceServer(
             oauth2 ->
                 oauth2

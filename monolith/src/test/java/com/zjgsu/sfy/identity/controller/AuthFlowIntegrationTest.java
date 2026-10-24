@@ -159,7 +159,31 @@ class AuthFlowIntegrationTest extends IdentityIntegrationTest {
     refresh(oldRefresh)
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.code").value("AUTH_INVALID_CREDENTIALS"));
-    refresh(newRefresh).andExpect(status().isOk());
+    // 检测到旧 token 重放后撤销整个 token family：攻击者若先用过轮换出的新 token，也不能继续会话。
+    refresh(newRefresh)
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("AUTH_INVALID_CREDENTIALS"));
+    // 受害者重新登录可恢复。
+    login(user.getUsername(), PASSWORD).andExpect(status().isOk());
+  }
+
+  @Test
+  void logoutDoesNotRevokeAnotherUsersRefreshToken() throws Exception {
+    User first = seedUser(Set.of(Role.OWNER));
+    User second = seedUser(Set.of(Role.OWNER));
+    String firstAccess = loginAccessToken(first.getUsername());
+    String secondRefresh = loginRefreshToken(second.getUsername());
+
+    mockMvc
+        .perform(
+            post("/api/auth/logout")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + firstAccess)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("refreshToken", secondRefresh))))
+        .andExpect(status().isNoContent());
+
+    // 拿到他人 refresh token 也不能强制其下线；不泄露 token 是否存在。
+    refresh(secondRefresh).andExpect(status().isOk());
   }
 
   @Test

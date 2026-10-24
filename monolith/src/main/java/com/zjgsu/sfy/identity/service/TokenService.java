@@ -52,6 +52,7 @@ public class TokenService {
             .claim("username", user.getUsername())
             .claim("roles", roles)
             .claim("typ", ACCESS_TOKEN_TYPE)
+            .claim("sv", user.getSessionVersion())
             .build();
     JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
     return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
