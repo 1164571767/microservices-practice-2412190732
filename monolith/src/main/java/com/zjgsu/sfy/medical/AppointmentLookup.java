@@ -16,6 +16,9 @@ public interface AppointmentLookup {
    */
   Optional<AppointmentInfo> findById(UUID appointmentId);
 
+  /** Stable lock shared by all medical writes and appointment lifecycle operations. */
+  Optional<AppointmentInfo> lockById(UUID appointmentId);
+
   /** 接诊所需的最小字段子集。 */
-  record AppointmentInfo(UUID id, UUID petId, UUID doctorId) {}
+  record AppointmentInfo(UUID id, UUID petId, UUID doctorId, String status) {}
 }

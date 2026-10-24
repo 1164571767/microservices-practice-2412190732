@@ -28,6 +28,17 @@ public abstract class MedicalIntegrationTest extends AppointmentIntegrationTest 
     return seedUser(Set.of(Role.DOCTOR));
   }
 
+  /** Medical write fixtures represent a patient already checked in and called. */
+  @Override
+  protected com.zjgsu.sfy.appointment.entity.Appointment seedAppointment(
+      UUID petId, UUID doctorId, Instant startAt, Instant endAt) {
+    var appointment =
+        com.zjgsu.sfy.appointment.entity.Appointment.book(petId, doctorId, startAt, endAt);
+    appointment.checkIn(startAt);
+    appointment.call(startAt);
+    return appointmentRepository.saveAndFlush(appointment);
+  }
+
   protected String recordBody(
       UUID appointmentId, String symptoms, String diagnosis, String advice, Instant visitedAt) {
     Map<String, Object> body = new LinkedHashMap<>();

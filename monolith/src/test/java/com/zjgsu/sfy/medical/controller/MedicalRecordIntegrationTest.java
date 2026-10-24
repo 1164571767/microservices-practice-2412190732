@@ -1,5 +1,6 @@
 package com.zjgsu.sfy.medical.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -7,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.zjgsu.sfy.appointment.entity.Appointment;
 import com.zjgsu.sfy.identity.common.Role;
 import com.zjgsu.sfy.identity.entity.User;
+import com.zjgsu.sfy.medical.MedicalRecordCreated;
 import com.zjgsu.sfy.medical.support.MedicalIntegrationTest;
 import com.zjgsu.sfy.owner.entity.Pet;
 import java.time.Duration;
@@ -14,12 +16,18 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
+@RecordApplicationEvents
 class MedicalRecordIntegrationTest extends MedicalIntegrationTest {
 
   private static final Instant VISITED_AT = Instant.parse("2026-09-15T01:05:00Z");
+
+  @Autowired ApplicationEvents events;
 
   private Pet seedPetWithOwner() {
     return seedPet(seedOwner(seedUser(Set.of(Role.OWNER))));
@@ -43,6 +51,13 @@ class MedicalRecordIntegrationTest extends MedicalIntegrationTest {
         .andExpect(jsonPath("$.doctorId").value(doctor.getId().toString()))
         .andExpect(jsonPath("$.diagnosis").value("支气管炎"))
         .andExpect(jsonPath("$.prescriptions.length()").value(0));
+    assertThat(events.stream(MedicalRecordCreated.class)).hasSize(1);
+    MedicalRecordCreated event =
+        events.stream(MedicalRecordCreated.class).findFirst().orElseThrow();
+    assertThat(event.recordId()).isNotNull();
+    assertThat(event.petId()).isEqualTo(pet.getId());
+    assertThat(event.doctorId()).isEqualTo(doctor.getId());
+    assertThat(event.visitedAt()).isEqualTo(VISITED_AT);
   }
 
   @Test

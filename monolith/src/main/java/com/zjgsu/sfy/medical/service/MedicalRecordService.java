@@ -5,6 +5,7 @@ import com.zjgsu.sfy.common.error.ErrorCode;
 import com.zjgsu.sfy.identity.CurrentUser;
 import com.zjgsu.sfy.medical.AppointmentLookup;
 import com.zjgsu.sfy.medical.AppointmentLookup.AppointmentInfo;
+import com.zjgsu.sfy.medical.MedicalRecordCreated;
 import com.zjgsu.sfy.medical.entity.MedicalRecord;
 import com.zjgsu.sfy.medical.entity.Prescription;
 import com.zjgsu.sfy.medical.entity.PrescriptionItem;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,25 +40,28 @@ public class MedicalRecordService {
   private final PrescriptionItemRepository prescriptionItemRepository;
   private final AppointmentLookup appointmentLookup;
   private final MedicalWritePolicy writePolicy;
+  private final ApplicationEventPublisher events;
 
   public MedicalRecordService(
       MedicalRecordRepository medicalRecordRepository,
       PrescriptionRepository prescriptionRepository,
       PrescriptionItemRepository prescriptionItemRepository,
       AppointmentLookup appointmentLookup,
-      MedicalWritePolicy writePolicy) {
+      MedicalWritePolicy writePolicy,
+      ApplicationEventPublisher events) {
     this.medicalRecordRepository = medicalRecordRepository;
     this.prescriptionRepository = prescriptionRepository;
     this.prescriptionItemRepository = prescriptionItemRepository;
     this.appointmentLookup = appointmentLookup;
     this.writePolicy = writePolicy;
+    this.events = events;
   }
 
-  @Transactional
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public MedicalRecord createRecord(CurrentUser requester, CreateMedicalRecordCommand command) {
     AppointmentInfo appointment =
         appointmentLookup
-            .findById(command.appointmentId())
+            .lockById(command.appointmentId())
             .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "预约不存在"));
     writePolicy.enforce(requester, appointment);
     Instant visitedAt = command.visitedAt() != null ? command.visitedAt() : Instant.now();
@@ -69,14 +74,23 @@ public class MedicalRecordService {
             command.diagnosis(),
             command.advice(),
             visitedAt);
+    MedicalRecord saved;
     try {
-      return medicalRecordRepository.saveAndFlush(record);
+      saved = medicalRecordRepository.saveAndFlush(record);
     } catch (DataIntegrityViolationException ex) {
       if (!UniqueViolations.causedByUniqueConstraint(ex)) {
         throw ex;
       }
       throw new BusinessException(ErrorCode.OPERATION_NOT_ALLOWED, "该预约已有病历");
     }
+    events.publishEvent(
+        new MedicalRecordCreated(
+            saved.getId(),
+            saved.getPetId(),
+            saved.getDoctorId(),
+            saved.getVisitedAt(),
+            Instant.now()));
+    return saved;
   }
 
   /** 宠物历史病历（含处方）分页查询：处方与明细各一次批量加载，页大小不影响查询条数（无 N+1）。 */

@@ -31,21 +31,24 @@ public class PrescriptionService {
   private final PrescriptionItemRepository prescriptionItemRepository;
   private final AppointmentLookup appointmentLookup;
   private final MedicalWritePolicy writePolicy;
+  private final org.springframework.context.ApplicationEventPublisher events;
 
   public PrescriptionService(
       MedicalRecordRepository medicalRecordRepository,
       PrescriptionRepository prescriptionRepository,
       PrescriptionItemRepository prescriptionItemRepository,
       AppointmentLookup appointmentLookup,
-      MedicalWritePolicy writePolicy) {
+      MedicalWritePolicy writePolicy,
+      org.springframework.context.ApplicationEventPublisher events) {
     this.medicalRecordRepository = medicalRecordRepository;
     this.prescriptionRepository = prescriptionRepository;
     this.prescriptionItemRepository = prescriptionItemRepository;
     this.appointmentLookup = appointmentLookup;
     this.writePolicy = writePolicy;
+    this.events = events;
   }
 
-  @Transactional
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public PrescriptionDetail issue(
       CurrentUser requester, UUID recordId, IssuePrescriptionCommand command) {
     MedicalRecord record =
@@ -54,7 +57,7 @@ public class PrescriptionService {
             .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "病历不存在"));
     AppointmentInfo appointment =
         appointmentLookup
-            .findById(record.getAppointmentId())
+            .lockById(record.getAppointmentId())
             .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "预约不存在"));
     writePolicy.enforce(requester, appointment);
     if (prescriptionRepository.existsByMedicalRecordId(recordId)) {
@@ -74,6 +77,12 @@ public class PrescriptionService {
     List<PrescriptionItem> items =
         command.items().stream().map(line -> toItem(prescription.getId(), line)).toList();
     prescriptionItemRepository.saveAllAndFlush(items);
+    events.publishEvent(
+        new com.zjgsu.sfy.medical.PrescriptionIssued(
+            prescription.getId(),
+            record.getPetId(),
+            prescription.getDoctorId(),
+            prescription.getIssuedAt()));
     return new PrescriptionDetail(prescription, items);
   }
 

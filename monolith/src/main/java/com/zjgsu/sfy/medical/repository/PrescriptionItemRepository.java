@@ -10,4 +10,6 @@ public interface PrescriptionItemRepository extends JpaRepository<PrescriptionIt
 
   /** 批量加载，供历史查询一次取回、避免逐条查询（N+1）。 */
   List<PrescriptionItem> findByPrescriptionIdIn(Collection<UUID> prescriptionIds);
+
+  List<PrescriptionItem> findByPrescriptionId(UUID prescriptionId);
 }
