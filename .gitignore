@@ -1,13 +1,51 @@
-# Claude Code local/runtime state
-.claude/runtime/
-.claude/settings.local.json
+# Repository-wide rules; frontend/ and monolith/ inherit this file.
 
-# IDE（本地工作区元数据，不同机器不一致，不入库）
-.idea/
-*.iml
+# Local agent configuration and documents
+/.claude/
+/.codex/
+/.agents/
+/[Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd]
+/docs/
+/png/
+/frontend-spec.md
+/frontend/*.md
+/frontend/public/images/*.md
 
-# 本地环境文件与日志（.env.example 需要入库）
+# Credentials (only example templates are versioned)
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+
+# IDE / editor state
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# Build, dependency, test and runtime output
+target/
+build/
+node_modules/
+dist/
+.artifacts/
+test-results/
+playwright-report/
+__pycache__/
+*.py[cod]
+*.tsbuildinfo
 *.log
+monolith/HELP.md
