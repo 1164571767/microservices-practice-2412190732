@@ -12,7 +12,14 @@ public enum ErrorCode {
   APPOINTMENT_CONFLICT(HttpStatus.CONFLICT, "该时段已被预约"),
   APPOINTMENT_NOT_AVAILABLE(HttpStatus.CONFLICT, "该时段不在可预约范围内"),
   APPOINTMENT_INVALID_STATE(HttpStatus.CONFLICT, "当前预约状态不允许该操作"),
+  DRUG_ALREADY_EXISTS(HttpStatus.CONFLICT, "同名同规格的药品已存在"),
+  CHARGE_ITEM_ALREADY_EXISTS(HttpStatus.CONFLICT, "同名收费项目已存在"),
+  PAYMENT_ALREADY_PAID(HttpStatus.CONFLICT, "账单已支付"),
+  PAYMENT_INVALID_STATE(HttpStatus.CONFLICT, "当前账单状态不允许该操作"),
+  INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "库存不足"),
+  INVENTORY_INVALID_STATE(HttpStatus.CONFLICT, "当前库存状态不允许该操作"),
   IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT, "幂等键已被使用且请求不一致"),
+  CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "数据已被其他请求修改，请重试"),
   OPERATION_NOT_ALLOWED(HttpStatus.CONFLICT, "当前业务状态不允许该操作"),
   INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "服务器内部错误");
 

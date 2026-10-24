@@ -38,11 +38,27 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  void missingRequiredParameterIsMappedToValidationFailed() throws Exception {
+    mockMvc
+        .perform(get("/test/errors/require-param"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
   void unmappedPathIsMappedToResourceNotFound() throws Exception {
     mockMvc
         .perform(get("/definitely-not-mapped"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+  }
+
+  @Test
+  void optimisticLockConflictIsMappedToConcurrentModification() throws Exception {
+    mockMvc
+        .perform(get("/test/errors/concurrent"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("CONCURRENT_MODIFICATION"));
   }
 
   @Test
