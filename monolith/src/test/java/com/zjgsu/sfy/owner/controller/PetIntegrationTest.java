@@ -23,7 +23,7 @@ import org.springframework.http.MediaType;
 class PetIntegrationTest extends OwnerIntegrationTest {
 
   @Test
-  void ownerCreatesListsUpdatesAndDeletesPet() throws Exception {
+  void ownerCreatesListsUpdatesPetButPhysicalDeletionIsRejected() throws Exception {
     User owner = seedUser(Set.of(Role.OWNER));
     seedOwner(owner);
     String token = bearer(owner);
@@ -64,11 +64,13 @@ class PetIntegrationTest extends OwnerIntegrationTest {
 
     mockMvc
         .perform(delete("/api/owner/pets/" + petId).header(HttpHeaders.AUTHORIZATION, token))
-        .andExpect(status().isNoContent());
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("OPERATION_NOT_ALLOWED"));
 
     mockMvc
         .perform(get("/api/owner/pets/" + petId).header(HttpHeaders.AUTHORIZATION, token))
-        .andExpect(status().isNotFound());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.name").value("大旺"));
   }
 
   @Test

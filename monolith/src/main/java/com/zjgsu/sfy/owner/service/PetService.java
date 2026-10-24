@@ -20,15 +20,19 @@ public class PetService {
 
   private final PetRepository petRepository;
   private final OwnerRepository ownerRepository;
+  @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
 
   public PetService(PetRepository petRepository, OwnerRepository ownerRepository) {
     this.petRepository = petRepository;
     this.ownerRepository = ownerRepository;
   }
 
-  @Transactional
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public Pet createPet(CurrentUser requester, UpsertPetCommand command) {
     Owner owner = requireOwnOwner(requester);
+    owner = ownerRepository.lockById(owner.getId()).orElseThrow();
+    entityManager.refresh(owner, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+    owner.requireActive();
     Pet pet =
         Pet.create(
             owner.getId(),
@@ -36,6 +40,7 @@ public class PetService {
             command.species(),
             command.birthDate(),
             command.weightKg());
+    pet.markBirthDateEstimated(Boolean.TRUE.equals(command.birthDateEstimated()));
     return petRepository.saveAndFlush(pet);
   }
 
@@ -50,16 +55,19 @@ public class PetService {
     return requireReadablePet(requester, petId);
   }
 
-  @Transactional
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public Pet updatePet(CurrentUser requester, UUID petId, UpsertPetCommand command) {
     Pet pet = requireOwnedPet(requester, petId);
     pet.updateDetails(command.name(), command.species(), command.birthDate(), command.weightKg());
-    return pet;
+    if (command.birthDateEstimated() != null)
+      pet.markBirthDateEstimated(command.birthDateEstimated());
+    return petRepository.saveAndFlush(pet);
   }
 
-  @Transactional
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public void deletePet(CurrentUser requester, UUID petId) {
-    petRepository.delete(requireOwnedPet(requester, petId));
+    requireReadablePet(requester, petId);
+    throw new BusinessException(ErrorCode.OPERATION_NOT_ALLOWED, "禁止物理删除档案，请由院内员工归档并保留历史");
   }
 
   /** 同模块复用：当前用户可读该宠物（本人所有或员工角色）。 */
@@ -76,10 +84,23 @@ public class PetService {
 
   /** 同模块复用：当前用户必须拥有该宠物。 */
   Pet requireOwnedPet(CurrentUser requester, UUID petId) {
-    Pet pet = loadPet(petId);
-    if (!loadPetOwner(pet).belongsTo(requester.userId())) {
-      throw new BusinessException(ErrorCode.AUTH_FORBIDDEN);
-    }
+    UUID ownerId =
+        petRepository
+            .findOwnerId(petId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    Owner owner =
+        ownerRepository
+            .lockById(ownerId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    entityManager.refresh(owner, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+    if (!owner.belongsTo(requester.userId())) throw new BusinessException(ErrorCode.AUTH_FORBIDDEN);
+    owner.requireActive();
+    Pet pet =
+        petRepository
+            .lockById(petId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+    entityManager.refresh(pet, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+    pet.requireActive();
     return pet;
   }
 

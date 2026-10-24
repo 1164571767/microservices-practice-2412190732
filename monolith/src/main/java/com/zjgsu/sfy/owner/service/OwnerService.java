@@ -15,17 +15,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class OwnerService {
 
   private final OwnerRepository ownerRepository;
+  @jakarta.persistence.PersistenceContext private jakarta.persistence.EntityManager entityManager;
 
   public OwnerService(OwnerRepository ownerRepository) {
     this.ownerRepository = ownerRepository;
   }
 
-  @Transactional
+  @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
   public Owner upsertOwnProfile(CurrentUser requester, UpsertOwnerCommand command) {
-    Owner owner = ownerRepository.findByUserId(requester.userId()).orElse(null);
+    Owner owner =
+        ownerRepository
+            .findByUserId(requester.userId())
+            .map(o -> ownerRepository.lockById(o.getId()).orElseThrow())
+            .orElse(null);
     if (owner == null) {
       owner = Owner.create(requester.userId(), command.name(), command.phone(), command.address());
     } else {
+      entityManager.refresh(owner, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
       owner.updateDetails(command.name(), command.phone(), command.address());
     }
     return ownerRepository.saveAndFlush(owner);

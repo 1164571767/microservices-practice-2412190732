@@ -38,6 +38,46 @@ public class Allergy {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
+  @Column(name = "recorded_by")
+  private UUID recordedBy;
+
+  @Column(name = "recorded_by_name", length = 100)
+  private String recordedByName;
+
+  @Column(name = "supersedes_id")
+  private UUID supersedesId;
+
+  @Column(name = "correction_reason", length = 255)
+  private String correctionReason;
+
+  public UUID getRecordedBy() {
+    return recordedBy;
+  }
+
+  public String getRecordedByName() {
+    return recordedByName;
+  }
+
+  public UUID getSupersedesId() {
+    return supersedesId;
+  }
+
+  public String getCorrectionReason() {
+    return correctionReason;
+  }
+
+  public void recordActor(UUID actor, String name) {
+    recordedBy = Objects.requireNonNull(actor);
+    recordedByName = name;
+  }
+
+  public void corrects(UUID recordId, String reason) {
+    if (reason == null || reason.isBlank())
+      throw new IllegalArgumentException("correction reason required");
+    supersedesId = Objects.requireNonNull(recordId);
+    correctionReason = reason.trim();
+  }
+
   protected Allergy() {}
 
   public static Allergy create(UUID petId, String allergen, AllergySeverity severity, String note) {

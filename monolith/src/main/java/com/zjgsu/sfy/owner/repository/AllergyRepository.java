@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AllergyRepository extends JpaRepository<Allergy, UUID> {
 
   List<Allergy> findByPetIdOrderByCreatedAtAsc(UUID petId);
+
+  boolean existsBySupersedesId(UUID supersedesId);
 }

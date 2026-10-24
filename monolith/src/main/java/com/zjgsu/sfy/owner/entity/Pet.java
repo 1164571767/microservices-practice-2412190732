@@ -49,6 +49,62 @@ public class Pet {
   @Column(nullable = false)
   private long version;
 
+  @Column(name = "archived_at")
+  private Instant archivedAt;
+
+  @Column(name = "archived_by")
+  private UUID archivedBy;
+
+  @Column(name = "archive_reason", length = 255)
+  private String archiveReason;
+
+  public boolean isArchived() {
+    return archivedAt != null;
+  }
+
+  public Instant getArchivedAt() {
+    return archivedAt;
+  }
+
+  public UUID getArchivedBy() {
+    return archivedBy;
+  }
+
+  public String getArchiveReason() {
+    return archiveReason;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public void requireActive() {
+    if (isArchived())
+      throw new com.zjgsu.sfy.common.error.BusinessException(
+          com.zjgsu.sfy.common.error.ErrorCode.OPERATION_NOT_ALLOWED, "档案已归档，仅可查阅历史");
+  }
+
+  public void archive(UUID actor, String reason) {
+    requireActive();
+    if (reason == null || reason.isBlank() || reason.trim().length() > 255)
+      throw new IllegalArgumentException("archive reason required");
+    archivedAt = Instant.now();
+    archivedBy = Objects.requireNonNull(actor);
+    archiveReason = reason.trim();
+  }
+
+  @Column(name = "birth_date_estimated", nullable = false)
+  private boolean birthDateEstimated;
+
+  public boolean isBirthDateEstimated() {
+    return birthDateEstimated;
+  }
+
+  public void markBirthDateEstimated(boolean estimated) {
+    requireActive();
+    this.birthDateEstimated = estimated;
+  }
+
   protected Pet() {}
 
   public static Pet create(
@@ -60,6 +116,7 @@ public class Pet {
   }
 
   public void updateDetails(String name, String species, LocalDate birthDate, BigDecimal weightKg) {
+    requireActive();
     applyDetails(name, species, birthDate, weightKg);
   }
 

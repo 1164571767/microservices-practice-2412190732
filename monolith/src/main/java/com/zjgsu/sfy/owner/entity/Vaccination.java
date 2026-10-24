@@ -38,6 +38,46 @@ public class Vaccination {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
+  @Column(name = "recorded_by")
+  private UUID recordedBy;
+
+  @Column(name = "recorded_by_name", length = 100)
+  private String recordedByName;
+
+  @Column(name = "supersedes_id")
+  private UUID supersedesId;
+
+  @Column(name = "correction_reason", length = 255)
+  private String correctionReason;
+
+  public UUID getRecordedBy() {
+    return recordedBy;
+  }
+
+  public String getRecordedByName() {
+    return recordedByName;
+  }
+
+  public UUID getSupersedesId() {
+    return supersedesId;
+  }
+
+  public String getCorrectionReason() {
+    return correctionReason;
+  }
+
+  public void recordActor(UUID actor, String name) {
+    recordedBy = Objects.requireNonNull(actor);
+    recordedByName = name;
+  }
+
+  public void corrects(UUID recordId, String reason) {
+    if (reason == null || reason.isBlank())
+      throw new IllegalArgumentException("correction reason required");
+    supersedesId = Objects.requireNonNull(recordId);
+    correctionReason = reason.trim();
+  }
+
   protected Vaccination() {}
 
   public static Vaccination create(
@@ -47,6 +87,11 @@ public class Vaccination {
     }
     if (administeredOn == null) {
       throw new IllegalArgumentException("administered date must not be null");
+    }
+    if (administeredOn.isAfter(LocalDate.now())
+        || (nextDueOn != null && nextDueOn.isBefore(administeredOn))) {
+      throw new com.zjgsu.sfy.common.error.BusinessException(
+          com.zjgsu.sfy.common.error.ErrorCode.VALIDATION_FAILED, "接种日期不能为未来，下次日期不能早于接种日期");
     }
     Vaccination vaccination = new Vaccination();
     vaccination.petId = Objects.requireNonNull(petId, "petId must not be null");

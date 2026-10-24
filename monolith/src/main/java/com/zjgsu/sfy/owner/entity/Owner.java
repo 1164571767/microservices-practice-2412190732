@@ -21,13 +21,13 @@ public class Owner {
   @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
   private UUID id;
 
-  @Column(name = "user_id", nullable = false)
+  @Column(name = "user_id")
   private UUID userId;
 
   @Column(nullable = false, length = 100)
   private String name;
 
-  @Column(nullable = false, length = 20)
+  @Column(nullable = false, length = 21)
   private String phone;
 
   @Column(length = 255)
@@ -43,6 +43,50 @@ public class Owner {
   @Column(nullable = false)
   private long version;
 
+  @Column(name = "archived_at")
+  private Instant archivedAt;
+
+  @Column(name = "archived_by")
+  private UUID archivedBy;
+
+  @Column(name = "archive_reason", length = 255)
+  private String archiveReason;
+
+  public boolean isArchived() {
+    return archivedAt != null;
+  }
+
+  public Instant getArchivedAt() {
+    return archivedAt;
+  }
+
+  public UUID getArchivedBy() {
+    return archivedBy;
+  }
+
+  public String getArchiveReason() {
+    return archiveReason;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+
+  public void requireActive() {
+    if (isArchived())
+      throw new com.zjgsu.sfy.common.error.BusinessException(
+          com.zjgsu.sfy.common.error.ErrorCode.OPERATION_NOT_ALLOWED, "档案已归档，仅可查阅历史");
+  }
+
+  public void archive(UUID actor, String reason) {
+    requireActive();
+    if (reason == null || reason.isBlank() || reason.trim().length() > 255)
+      throw new IllegalArgumentException("archive reason required");
+    archivedAt = Instant.now();
+    archivedBy = Objects.requireNonNull(actor);
+    archiveReason = reason.trim();
+  }
+
   protected Owner() {}
 
   public static Owner create(UUID userId, String name, String phone, String address) {
@@ -52,7 +96,22 @@ public class Owner {
     return owner;
   }
 
+  public static Owner createUnbound(String name, String phone, String address) {
+    Owner owner = new Owner();
+    owner.applyDetails(name, phone, address);
+    return owner;
+  }
+
+  public void bind(UUID userId) {
+    requireActive();
+    if (this.userId != null)
+      throw new com.zjgsu.sfy.common.error.BusinessException(
+          com.zjgsu.sfy.common.error.ErrorCode.OPERATION_NOT_ALLOWED, "档案已绑定账号，禁止覆盖绑定");
+    this.userId = Objects.requireNonNull(userId);
+  }
+
   public void updateDetails(String name, String phone, String address) {
+    requireActive();
     applyDetails(name, phone, address);
   }
 
@@ -81,7 +140,7 @@ public class Owner {
   }
 
   public boolean belongsTo(UUID candidateUserId) {
-    return userId.equals(candidateUserId);
+    return userId != null && userId.equals(candidateUserId);
   }
 
   public UUID getId() {

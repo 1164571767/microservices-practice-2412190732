@@ -11,6 +11,21 @@ import org.junit.jupiter.api.Test;
 class PetTest {
 
   @Test
+  void estimatedBirthdayAndArchiveKeepOriginalClinicalIdentity() {
+    UUID ownerId = UUID.randomUUID();
+    Pet pet = Pet.create(ownerId, "小满", "猫", LocalDate.of(2024, 6, 1), new BigDecimal("4.25"));
+    pet.markBirthDateEstimated(true);
+    pet.archive(UUID.randomUUID(), "客户申请归档");
+    assertThat(pet.isBirthDateEstimated()).isTrue();
+    assertThat(pet.getOwnerId()).isEqualTo(ownerId);
+    assertThat(pet.getName()).isEqualTo("小满");
+    assertThatThrownBy(() -> pet.markBirthDateEstimated(false))
+        .isInstanceOf(com.zjgsu.sfy.common.error.BusinessException.class);
+    assertThatThrownBy(() -> pet.updateDetails("覆盖", "犬", LocalDate.of(2025, 1, 1), BigDecimal.ONE))
+        .isInstanceOf(com.zjgsu.sfy.common.error.BusinessException.class);
+  }
+
+  @Test
   void createNormalizesWeightToTwoDecimals() {
     Pet pet =
         Pet.create(
