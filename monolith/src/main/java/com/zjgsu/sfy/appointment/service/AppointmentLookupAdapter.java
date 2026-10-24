@@ -26,6 +26,19 @@ public class AppointmentLookupAdapter implements AppointmentLookup {
         .map(
             appointment ->
                 new AppointmentInfo(
-                    appointment.getId(), appointment.getPetId(), appointment.getDoctorId()));
+                    appointment.getId(),
+                    appointment.getPetId(),
+                    appointment.getDoctorId(),
+                    appointment.getStatus().name()));
+  }
+
+  @Override
+  public Optional<AppointmentInfo> lockById(UUID appointmentId) {
+    return appointmentRepository
+        .findByIdForUpdate(appointmentId)
+        .map(
+            a ->
+                new AppointmentInfo(
+                    a.getId(), a.getPetId(), a.getDoctorId(), a.getStatus().name()));
   }
 }

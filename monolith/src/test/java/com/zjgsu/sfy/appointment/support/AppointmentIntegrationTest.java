@@ -14,6 +14,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 /** appointment 模块集成测试基类：复用 identity/owner 的注册登录、真实 MySQL 与宠物夹具。 */
 public abstract class AppointmentIntegrationTest extends OwnerIntegrationTest {
 
+  @org.springframework.test.context.bean.override.mockito.MockitoBean(name = "appointmentClock")
+  protected java.time.Clock appointmentClock;
+
+  @org.junit.jupiter.api.BeforeEach
+  void fixClinicClock() {
+    org.mockito.Mockito.when(appointmentClock.instant()).thenReturn(SLOT_START);
+    org.mockito.Mockito.doAnswer(
+            invocation -> java.time.Clock.fixed(SLOT_START, invocation.getArgument(0)))
+        .when(appointmentClock)
+        .withZone(org.mockito.ArgumentMatchers.any());
+  }
+
   protected static final Instant SCHEDULE_START = Instant.parse("2026-11-10T00:00:00Z");
   protected static final Instant SCHEDULE_END = Instant.parse("2026-11-10T04:00:00Z");
   protected static final Instant SLOT_START = Instant.parse("2026-11-10T01:00:00Z");

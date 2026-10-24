@@ -30,6 +30,17 @@ public class Appointment {
   @Column(name = "doctor_id", nullable = false)
   private UUID doctorId;
 
+  @Column(name = "schedule_id")
+  private UUID scheduleId;
+
+  public UUID getScheduleId() {
+    return scheduleId;
+  }
+
+  public void assignSchedule(UUID scheduleId) {
+    this.scheduleId = Objects.requireNonNull(scheduleId);
+  }
+
   @Column(name = "start_at", nullable = false)
   private Instant startAt;
 
@@ -106,15 +117,23 @@ public class Appointment {
   }
 
   public void checkIn() {
+    checkIn(Instant.now());
+  }
+
+  public void checkIn(Instant now) {
     require(canCheckIn());
     this.status = AppointmentStatus.CHECKED_IN;
-    this.checkedInAt = Instant.now();
+    this.checkedInAt = Objects.requireNonNull(now);
   }
 
   public void call() {
+    call(Instant.now());
+  }
+
+  public void call(Instant now) {
     require(canCall());
     this.status = AppointmentStatus.CALLED;
-    this.calledAt = Instant.now();
+    this.calledAt = Objects.requireNonNull(now);
   }
 
   private void require(boolean condition) {
