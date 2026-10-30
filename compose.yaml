@@ -1,71 +1,399 @@
-name: petcare
-
+name: petcare-microservices
 services:
-  mysql:
+  micro-mysql:
     image: mysql:8.4.11
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-petcare}
-      MYSQL_USER: ${DB_USER:-petcare}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       TZ: Asia/Shanghai
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD is required}
+      PATIENT_DB_PASSWORD: ${PATIENT_DB_PASSWORD:?PATIENT_DB_PASSWORD is required}
+      CLINIC_DB_PASSWORD: ${CLINIC_DB_PASSWORD:?CLINIC_DB_PASSWORD is required}
+      PHARMACY_DB_PASSWORD: ${PHARMACY_DB_PASSWORD:?PHARMACY_DB_PASSWORD is required}
+      BILLING_DB_PASSWORD: ${BILLING_DB_PASSWORD:?BILLING_DB_PASSWORD is required}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?NOTIFICATION_DB_PASSWORD
+        is required}
+      REPORTING_DB_PASSWORD: ${REPORTING_DB_PASSWORD:?REPORTING_DB_PASSWORD is required}
     command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_0900_ai_ci
+    - --character-set-server=utf8mb4
+    - --collation-server=utf8mb4_0900_ai_ci
     volumes:
-      - mysql-data:/var/lib/mysql
+    - micro-mysql-data:/var/lib/mysql
+    - ./scripts/mysql-init-services.sh:/docker-entrypoint-initdb.d/01-services.sh:ro
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -u\"$$MYSQL_USER\" -p\"$$MYSQL_PASSWORD\" --silent",
-        ]
+      - CMD-SHELL
+      - MYSQL_PWD="$${MYSQL_ROOT_PASSWORD}" mysql -h 127.0.0.1 -uroot -e "SELECT 1"
+        >/dev/null 2>&1
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 30
       start_period: 30s
     restart: unless-stopped
-
-  app:
+  identity-service:
     build:
-      context: ./monolith
-      dockerfile: Dockerfile
-    image: petcare-monolith:week05
+      context: ./services/identity-service
+    image: petcare-identity:week06
     ports:
-      - "${APP_PORT:-8080}:8080"
+    - 127.0.0.1:8081:8080
     environment:
-      DB_HOST: ${DB_HOST:-mysql}
-      DB_PORT: ${DB_PORT:-3306}
-      DB_NAME: ${DB_NAME:-petcare}
-      DB_USER: ${DB_USER:-petcare}
-      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      SERVER_PORT: '8080'
+      DB_HOST: micro-mysql
+      DB_PORT: '3306'
+      DB_NAME: petcare_identity
+      DB_USER: svc_identity
+      DB_PASSWORD: ${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD is required}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_ISSUER: ${JWT_ISSUER:-https://petcare.local}
-      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-}
-      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
-      BOOTSTRAP_ADMIN_PHONE: ${BOOTSTRAP_ADMIN_PHONE:-}
-      # 本地演示默认允许匿名浏览 Swagger UI；生产请设置 OPENAPI_PUBLIC=false 或 OPENAPI_ENABLED=false。
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
+      HTTP_CONNECT_TIMEOUT: ${HTTP_CONNECT_TIMEOUT:-PT2S}
+      HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-PT5S}
       OPENAPI_PUBLIC: ${OPENAPI_PUBLIC:-true}
-      OPENAPI_ENABLED: ${OPENAPI_ENABLED:-true}
       TZ: Asia/Shanghai
+      IDENTITY_SERVICE_URL: http://identity-service:8080
+      PATIENT_SERVICE_URL: http://patient-service:8080
+      CLINIC_SERVICE_URL: http://clinic-service:8080
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8080
+      BILLING_SERVICE_URL: http://billing-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      REPORTING_SERVICE_URL: http://reporting-service:8080
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:?BOOTSTRAP_ADMIN_USERNAME
+        is required}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?BOOTSTRAP_ADMIN_PASSWORD
+        is required}
+      BOOTSTRAP_ADMIN_PHONE: ${BOOTSTRAP_ADMIN_PHONE:?BOOTSTRAP_ADMIN_PHONE is required}
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75}
     depends_on:
-      mysql:
+      micro-mysql:
         condition: service_healthy
     healthcheck:
       test:
-        [
-          "CMD",
-          "curl",
-          "-fsS",
-          "http://localhost:8080/actuator/health/readiness",
-        ]
+      - CMD
+      - curl
+      - -fsS
+      - http://localhost:8080/actuator/health/readiness
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 60s
-    # 给正在收尾的请求留时间，避免直接 kill 造成连接中断。
+      retries: 18
+      start_period: 90s
     stop_grace_period: 30s
     restart: unless-stopped
-
+  patient-service:
+    build:
+      context: ./services/patient-service
+    image: petcare-patient:week06
+    ports:
+    - 127.0.0.1:8082:8080
+    environment:
+      SERVER_PORT: '8080'
+      DB_HOST: micro-mysql
+      DB_PORT: '3306'
+      DB_NAME: petcare_patient
+      DB_USER: svc_patient
+      DB_PASSWORD: ${PATIENT_DB_PASSWORD:?PATIENT_DB_PASSWORD is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ISSUER: ${JWT_ISSUER:-https://petcare.local}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
+      HTTP_CONNECT_TIMEOUT: ${HTTP_CONNECT_TIMEOUT:-PT2S}
+      HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-PT5S}
+      OPENAPI_PUBLIC: ${OPENAPI_PUBLIC:-true}
+      TZ: Asia/Shanghai
+      IDENTITY_SERVICE_URL: http://identity-service:8080
+      PATIENT_SERVICE_URL: http://patient-service:8080
+      CLINIC_SERVICE_URL: http://clinic-service:8080
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8080
+      BILLING_SERVICE_URL: http://billing-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      REPORTING_SERVICE_URL: http://reporting-service:8080
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75}
+    depends_on:
+      micro-mysql:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://localhost:8080/actuator/health/readiness
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+    stop_grace_period: 30s
+    restart: unless-stopped
+  clinic-service:
+    build:
+      context: ./services/clinic-service
+    image: petcare-clinic:week06
+    ports:
+    - 127.0.0.1:8083:8080
+    environment:
+      SERVER_PORT: '8080'
+      DB_HOST: micro-mysql
+      DB_PORT: '3306'
+      DB_NAME: petcare_clinic
+      DB_USER: svc_clinic
+      DB_PASSWORD: ${CLINIC_DB_PASSWORD:?CLINIC_DB_PASSWORD is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ISSUER: ${JWT_ISSUER:-https://petcare.local}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
+      HTTP_CONNECT_TIMEOUT: ${HTTP_CONNECT_TIMEOUT:-PT2S}
+      HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-PT5S}
+      OPENAPI_PUBLIC: ${OPENAPI_PUBLIC:-true}
+      TZ: Asia/Shanghai
+      IDENTITY_SERVICE_URL: http://identity-service:8080
+      PATIENT_SERVICE_URL: http://patient-service:8080
+      CLINIC_SERVICE_URL: http://clinic-service:8080
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8080
+      BILLING_SERVICE_URL: http://billing-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      REPORTING_SERVICE_URL: http://reporting-service:8080
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75}
+    depends_on:
+      micro-mysql:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      patient-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://localhost:8080/actuator/health/readiness
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+    stop_grace_period: 30s
+    restart: unless-stopped
+  pharmacy-service:
+    build:
+      context: ./services/pharmacy-service
+    image: petcare-pharmacy:week06
+    ports:
+    - 127.0.0.1:8084:8080
+    environment:
+      SERVER_PORT: '8080'
+      DB_HOST: micro-mysql
+      DB_PORT: '3306'
+      DB_NAME: petcare_pharmacy
+      DB_USER: svc_pharmacy
+      DB_PASSWORD: ${PHARMACY_DB_PASSWORD:?PHARMACY_DB_PASSWORD is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ISSUER: ${JWT_ISSUER:-https://petcare.local}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
+      HTTP_CONNECT_TIMEOUT: ${HTTP_CONNECT_TIMEOUT:-PT2S}
+      HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-PT5S}
+      OPENAPI_PUBLIC: ${OPENAPI_PUBLIC:-true}
+      TZ: Asia/Shanghai
+      IDENTITY_SERVICE_URL: http://identity-service:8080
+      PATIENT_SERVICE_URL: http://patient-service:8080
+      CLINIC_SERVICE_URL: http://clinic-service:8080
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8080
+      BILLING_SERVICE_URL: http://billing-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      REPORTING_SERVICE_URL: http://reporting-service:8080
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75}
+    depends_on:
+      micro-mysql:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      patient-service:
+        condition: service_healthy
+      clinic-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://localhost:8080/actuator/health/readiness
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+    stop_grace_period: 30s
+    restart: unless-stopped
+  billing-service:
+    build:
+      context: ./services/billing-service
+    image: petcare-billing:week06
+    ports:
+    - 127.0.0.1:8085:8080
+    environment:
+      SERVER_PORT: '8080'
+      DB_HOST: micro-mysql
+      DB_PORT: '3306'
+      DB_NAME: petcare_billing
+      DB_USER: svc_billing
+      DB_PASSWORD: ${BILLING_DB_PASSWORD:?BILLING_DB_PASSWORD is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ISSUER: ${JWT_ISSUER:-https://petcare.local}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
+      HTTP_CONNECT_TIMEOUT: ${HTTP_CONNECT_TIMEOUT:-PT2S}
+      HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-PT5S}
+      OPENAPI_PUBLIC: ${OPENAPI_PUBLIC:-true}
+      TZ: Asia/Shanghai
+      IDENTITY_SERVICE_URL: http://identity-service:8080
+      PATIENT_SERVICE_URL: http://patient-service:8080
+      CLINIC_SERVICE_URL: http://clinic-service:8080
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8080
+      BILLING_SERVICE_URL: http://billing-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      REPORTING_SERVICE_URL: http://reporting-service:8080
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75}
+    depends_on:
+      micro-mysql:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      patient-service:
+        condition: service_healthy
+      clinic-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://localhost:8080/actuator/health/readiness
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+    stop_grace_period: 30s
+    restart: unless-stopped
+  notification-service:
+    build:
+      context: ./services/notification-service
+    image: petcare-notification:week06
+    ports:
+    - 127.0.0.1:8086:8080
+    environment:
+      SERVER_PORT: '8080'
+      DB_HOST: micro-mysql
+      DB_PORT: '3306'
+      DB_NAME: petcare_notification
+      DB_USER: svc_notification
+      DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?NOTIFICATION_DB_PASSWORD is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ISSUER: ${JWT_ISSUER:-https://petcare.local}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
+      HTTP_CONNECT_TIMEOUT: ${HTTP_CONNECT_TIMEOUT:-PT2S}
+      HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-PT5S}
+      OPENAPI_PUBLIC: ${OPENAPI_PUBLIC:-true}
+      TZ: Asia/Shanghai
+      IDENTITY_SERVICE_URL: http://identity-service:8080
+      PATIENT_SERVICE_URL: http://patient-service:8080
+      CLINIC_SERVICE_URL: http://clinic-service:8080
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8080
+      BILLING_SERVICE_URL: http://billing-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      REPORTING_SERVICE_URL: http://reporting-service:8080
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75}
+    depends_on:
+      micro-mysql:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      patient-service:
+        condition: service_healthy
+      clinic-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://localhost:8080/actuator/health/readiness
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+    stop_grace_period: 30s
+    restart: unless-stopped
+  reporting-service:
+    build:
+      context: ./services/reporting-service
+    image: petcare-reporting:week06
+    ports:
+    - 127.0.0.1:8087:8080
+    environment:
+      SERVER_PORT: '8080'
+      DB_HOST: micro-mysql
+      DB_PORT: '3306'
+      DB_NAME: petcare_reporting
+      DB_USER: svc_reporting
+      DB_PASSWORD: ${REPORTING_DB_PASSWORD:?REPORTING_DB_PASSWORD is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ISSUER: ${JWT_ISSUER:-https://petcare.local}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:?SERVICE_TOKEN is required}
+      HTTP_CONNECT_TIMEOUT: ${HTTP_CONNECT_TIMEOUT:-PT2S}
+      HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-PT5S}
+      OPENAPI_PUBLIC: ${OPENAPI_PUBLIC:-true}
+      TZ: Asia/Shanghai
+      IDENTITY_SERVICE_URL: http://identity-service:8080
+      PATIENT_SERVICE_URL: http://patient-service:8080
+      CLINIC_SERVICE_URL: http://clinic-service:8080
+      PHARMACY_SERVICE_URL: http://pharmacy-service:8080
+      BILLING_SERVICE_URL: http://billing-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
+      REPORTING_SERVICE_URL: http://reporting-service:8080
+      JAVA_OPTS: ${JAVA_OPTS:--XX:MaxRAMPercentage=75}
+    depends_on:
+      micro-mysql:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://localhost:8080/actuator/health/readiness
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+    stop_grace_period: 30s
+    restart: unless-stopped
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    image: petcare-gateway:week06
+    ports:
+    - ${APP_PORT:-8080}:8080
+    depends_on:
+      identity-service:
+        condition: service_healthy
+      patient-service:
+        condition: service_healthy
+      clinic-service:
+        condition: service_healthy
+      pharmacy-service:
+        condition: service_healthy
+      billing-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+      reporting-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD
+      - wget
+      - -q
+      - -O
+      - /dev/null
+      - http://127.0.0.1:8080/gateway-health
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
 volumes:
-  mysql-data:
+  micro-mysql-data: {}
