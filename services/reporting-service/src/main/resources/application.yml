@@ -1,0 +1,95 @@
+server:
+  port: ${SERVER_PORT:8087}
+
+spring:
+  application:
+    name: reporting-service
+  config:
+    import: optional:file:./.env[.properties]
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:petcare_reporting}?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8
+    username: ${DB_USER:svc_reporting}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  threads:
+    virtual:
+      enabled: false
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: 0.0.1-SNAPSHOT
+
+petcare:
+  openapi:
+    # 默认不公开：只有显式设置 OPENAPI_PUBLIC=true（本地开发/演示）才允许匿名读取文档。
+    public: ${OPENAPI_PUBLIC:false}
+  security:
+    jwt:
+      # 必须由环境变量提供且至少 32 字符；不设默认值以在后端误配置时快速失败。
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:https://petcare.local}
+      access-ttl: ${JWT_ACCESS_TTL:PT15M}
+      refresh-ttl: ${JWT_REFRESH_TTL:P7D}
+    bootstrap-admin:
+      # 可选：全新环境引导首个管理员。三项均提供时才创建。
+      username: ${BOOTSTRAP_ADMIN_USERNAME:}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+      phone: ${BOOTSTRAP_ADMIN_PHONE:}
+      display-name: ${BOOTSTRAP_ADMIN_DISPLAY_NAME:系统管理员}
+  notification:
+    revisit-reminder:
+      # 每日扫描「就诊日 = 提醒日 − delay-days」的病历，为主人生成复诊提醒；重复执行不重复生成。
+      enabled: ${REVISIT_REMINDER_ENABLED:true}
+      delay-days: ${REVISIT_REMINDER_DELAY_DAYS:7}
+      cron: "${REVISIT_REMINDER_CRON:0 0 9 * * *}"
+      zone: ${REVISIT_REMINDER_ZONE:Asia/Shanghai}
+  reporting:
+    # 统计日按该时区切分；查询区间含首尾，跨度上限防止无界聚合。
+    zone: ${REPORTING_ZONE:Asia/Shanghai}
+    max-range-days: ${REPORTING_MAX_RANGE_DAYS:366}
+
+springdoc:
+  api-docs:
+    # 代码优先生成 /v3/api-docs；不需要文档时可用 OPENAPI_ENABLED=false 整体关闭。
+    enabled: ${OPENAPI_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${OPENAPI_ENABLED:true}
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+
+services:
+  identity-url: ${IDENTITY_SERVICE_URL:http://localhost:8081}
+  patient-url: ${PATIENT_SERVICE_URL:http://localhost:8082}
+  clinic-url: ${CLINIC_SERVICE_URL:http://localhost:8083}
+  pharmacy-url: ${PHARMACY_SERVICE_URL:http://localhost:8084}
+  billing-url: ${BILLING_SERVICE_URL:http://localhost:8085}
+  notification-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+  reporting-url: ${REPORTING_SERVICE_URL:http://localhost:8087}
+  token: ${SERVICE_TOKEN}
+  connect-timeout: ${HTTP_CONNECT_TIMEOUT:PT2S}
+  read-timeout: ${HTTP_READ_TIMEOUT:PT5S}
