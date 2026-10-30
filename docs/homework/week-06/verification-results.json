@@ -1,0 +1,791 @@
+{
+  "recordedAt": "2026-10-26T14:03:27+08:00",
+  "environment": {
+    "mode": "Native Java processes + seven MySQL schemas/accounts + native Nginx; no Docker Engine",
+    "java": "25",
+    "springBoot": "4.0.8",
+    "mysql": "8.0.43",
+    "nginx": "1.28.0",
+    "composeCli": "5.6.1"
+  },
+  "build": {
+    "command": "mvn -B -f services/pom.xml spotless:apply verify",
+    "result": "PASS",
+    "testCount": 144,
+    "services": {
+      "identity": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "patient": {
+        "tests": 24,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "clinic": {
+        "tests": 29,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "pharmacy": {
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "billing": {
+        "tests": 25,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "notification": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "reporting": {
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  },
+  "frontend": {
+    "command": "npm run check",
+    "result": "PASS",
+    "unitTests": 134,
+    "testFiles": 16,
+    "browser": {
+      "routes": [
+        [
+          "/clients",
+          "客户与宠物"
+        ],
+        [
+          "/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9",
+          "宠物健康档案"
+        ],
+        [
+          "/appointments",
+          "预约与接待"
+        ],
+        [
+          "/medical?appointmentId=01a176cc-8c98-73e1-8df8-02996dcb8ca8",
+          "诊疗工作台"
+        ],
+        [
+          "/pharmacy",
+          "药房与库存"
+        ],
+        [
+          "/billing",
+          "收费与账单"
+        ],
+        [
+          "/reporting",
+          "数据报表"
+        ],
+        [
+          "/notifications",
+          "通知中心"
+        ],
+        [
+          "/settings/users",
+          "员工账号管理"
+        ],
+        [
+          "/settings/users/new",
+          "开通员工账号"
+        ],
+        [
+          "/settings/password",
+          "修改密码"
+        ]
+      ],
+      "responses": [
+        {
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "path": "/api/identity/me",
+          "status": 200
+        },
+        {
+          "path": "/api/notification/notifications/unread-count",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/clients",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/owners/01a176cc-8980-77be-8473-838fb687e5e2",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/allergies",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/vaccinations",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/clinic-pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/operations",
+          "status": 200
+        },
+        {
+          "path": "/api/appointment/doctors",
+          "status": 200
+        },
+        {
+          "path": "/api/appointment/appointments",
+          "status": 200
+        },
+        {
+          "path": "/api/appointment/queue",
+          "status": 200
+        },
+        {
+          "path": "/api/medical/consultations/01a176cc-8c98-73e1-8df8-02996dcb8ca8",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9",
+          "status": 200
+        },
+        {
+          "path": "/api/owner/owners/01a176cc-8980-77be-8473-838fb687e5e2",
+          "status": 200
+        },
+        {
+          "path": "/api/medical/consultations/01a176cc-8c98-73e1-8df8-02996dcb8ca8/handoff",
+          "status": 200
+        },
+        {
+          "path": "/api/pharmacy/workbench/prescriptions",
+          "status": 200
+        },
+        {
+          "path": "/api/billing/workbench/bills",
+          "status": 200
+        },
+        {
+          "path": "/api/reporting/visits",
+          "status": 200
+        },
+        {
+          "path": "/api/notification/notifications",
+          "status": 200
+        },
+        {
+          "path": "/api/identity/employees",
+          "status": 200
+        }
+      ],
+      "errors": []
+    }
+  },
+  "compose": {
+    "microservicesConfig": "PASS",
+    "preservedMonolithConfig": "PASS",
+    "dockerBuild": "NOT RUN - Docker Engine unavailable",
+    "composeUp": "NOT RUN - Docker Engine unavailable",
+    "containerVolumePersistence": "NOT RUN - Docker Engine unavailable"
+  },
+  "health": [
+    {
+      "service": "identity-service",
+      "port": 8081,
+      "httpStatus": 200,
+      "status": "UP"
+    },
+    {
+      "service": "patient-service",
+      "port": 8082,
+      "httpStatus": 200,
+      "status": "UP"
+    },
+    {
+      "service": "clinic-service",
+      "port": 8083,
+      "httpStatus": 200,
+      "status": "UP"
+    },
+    {
+      "service": "pharmacy-service",
+      "port": 8084,
+      "httpStatus": 200,
+      "status": "UP"
+    },
+    {
+      "service": "billing-service",
+      "port": 8085,
+      "httpStatus": 200,
+      "status": "UP"
+    },
+    {
+      "service": "notification-service",
+      "port": 8086,
+      "httpStatus": 200,
+      "status": "UP"
+    },
+    {
+      "service": "reporting-service",
+      "port": 8087,
+      "httpStatus": 200,
+      "status": "UP"
+    }
+  ],
+  "workflow": {
+    "requests": [
+      {
+        "service": "identity",
+        "method": "GET",
+        "path": "/actuator/health",
+        "status": 200
+      },
+      {
+        "service": "patient",
+        "method": "GET",
+        "path": "/actuator/health",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/actuator/health",
+        "status": 200
+      },
+      {
+        "service": "pharmacy",
+        "method": "GET",
+        "path": "/actuator/health",
+        "status": 200
+      },
+      {
+        "service": "billing",
+        "method": "GET",
+        "path": "/actuator/health",
+        "status": 200
+      },
+      {
+        "service": "notification",
+        "method": "GET",
+        "path": "/actuator/health",
+        "status": 200
+      },
+      {
+        "service": "reporting",
+        "method": "GET",
+        "path": "/actuator/health",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/register",
+        "status": 201
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "patient",
+        "method": "PUT",
+        "path": "/api/owner/me",
+        "status": 200
+      },
+      {
+        "service": "patient",
+        "method": "POST",
+        "path": "/api/owner/pets",
+        "status": 201
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/identity/users",
+        "status": 201
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/schedules",
+        "status": 201
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/appointment/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/appointments",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 201
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 201
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/appointment/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/appointments",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 404,
+        "code": "RESOURCE_NOT_FOUND"
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/appointment/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/appointments",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments/01a176cc-8c98-73e1-8df8-02996dcb8ca8/check-in",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/queue/call?doctorId=01a176cc-8ac4-7a63-8960-7eed256f0d94",
+        "status": 200
+      },
+      {
+        "service": "pharmacy",
+        "method": "POST",
+        "path": "/api/pharmacy/drugs",
+        "status": 201
+      },
+      {
+        "service": "clinic",
+        "method": "PUT",
+        "path": "/api/medical/consultations/01a176cc-8c98-73e1-8df8-02996dcb8ca8/draft",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/medical/consultations/01a176cc-8c98-73e1-8df8-02996dcb8ca8/submit",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/medical/consultations/01a176cc-8c98-73e1-8df8-02996dcb8ca8/complete",
+        "status": 200
+      },
+      {
+        "service": "pharmacy",
+        "method": "GET",
+        "path": "/api/pharmacy/workbench/prescriptions?status=PENDING&size=100",
+        "status": 200
+      },
+      {
+        "service": "pharmacy",
+        "method": "GET",
+        "path": "/api/pharmacy/workbench/prescriptions/01a176cc-9179-7c53-899c-cdaaad96ea55",
+        "status": 200
+      },
+      {
+        "service": "pharmacy",
+        "method": "POST",
+        "path": "/api/pharmacy/prescriptions/01a176cc-9179-7c53-899c-cdaaad96ea55/dispense",
+        "status": 201
+      },
+      {
+        "service": "pharmacy",
+        "method": "POST",
+        "path": "/api/pharmacy/prescriptions/01a176cc-9179-7c53-899c-cdaaad96ea55/dispense",
+        "status": 201
+      },
+      {
+        "service": "pharmacy",
+        "method": "GET",
+        "path": "/api/pharmacy/inventory/01a176cc-9089-7256-b5a5-365f2f471861",
+        "status": 200
+      },
+      {
+        "service": "billing",
+        "method": "POST",
+        "path": "/api/billing/charge-items",
+        "status": 201
+      },
+      {
+        "service": "billing",
+        "method": "POST",
+        "path": "/api/billing/bills",
+        "status": 201
+      },
+      {
+        "service": "billing",
+        "method": "POST",
+        "path": "/api/billing/bills/01a176cc-9763-718f-8a07-aa47ce0efaef/pay",
+        "status": 201
+      },
+      {
+        "service": "billing",
+        "method": "POST",
+        "path": "/api/billing/bills/01a176cc-9763-718f-8a07-aa47ce0efaef/pay",
+        "status": 201
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/medical/consultations/01a176cc-8c98-73e1-8df8-02996dcb8ca8/handoff",
+        "status": 200
+      },
+      {
+        "service": "patient",
+        "method": "GET",
+        "path": "/api/owner/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/medical-records",
+        "status": 200
+      },
+      {
+        "service": "notification",
+        "method": "GET",
+        "path": "/api/notification/notifications?size=100",
+        "status": 200
+      },
+      {
+        "service": "reporting",
+        "method": "GET",
+        "path": "/api/reporting/visits?from=2026-10-26&to=2026-10-26&doctorId=01a176cc-8ac4-7a63-8960-7eed256f0d94",
+        "status": 200
+      },
+      {
+        "service": "reporting",
+        "method": "GET",
+        "path": "/api/reporting/revenue?from=2026-10-26&to=2026-10-26",
+        "status": 200
+      },
+      {
+        "service": "reporting",
+        "method": "GET",
+        "path": "/api/reporting/drug-consumption?from=2026-10-26&to=2026-10-26&drugId=01a176cc-9089-7256-b5a5-365f2f471861",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 409,
+        "code": "APPOINTMENT_CONFLICT"
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 409,
+        "code": "APPOINTMENT_CONFLICT"
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 409,
+        "code": "APPOINTMENT_CONFLICT"
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 409,
+        "code": "APPOINTMENT_CONFLICT"
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 409,
+        "code": "APPOINTMENT_CONFLICT"
+      },
+      {
+        "service": "clinic",
+        "method": "POST",
+        "path": "/api/appointment/appointments",
+        "status": 201
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/appointment/pets/01a176cc-8a1a-7631-8fe0-78d86ecaf9c9/appointments",
+        "status": 200
+      }
+    ],
+    "checks": {
+      "inventoryBefore": 10,
+      "inventoryAfter": 8,
+      "paymentStatus": "PAID",
+      "visitFactsForDoctor": 1,
+      "drugConsumption": 2,
+      "ownerNotificationTypes": [
+        "APPOINTMENT_BOOKED",
+        "BILL_PAID",
+        "QUEUE_CALLED"
+      ],
+      "concurrentBookingWinners": 1,
+      "concurrentBookingAttempts": 6
+    },
+    "ids": {
+      "petId": "01a176cc-8a1a-7631-8fe0-78d86ecaf9c9",
+      "doctorId": "01a176cc-8ac4-7a63-8960-7eed256f0d94",
+      "appointmentId": "01a176cc-8c98-73e1-8df8-02996dcb8ca8",
+      "medicalRecordId": "01a176cc-9163-7fde-8f0b-6dfa375b51de",
+      "prescriptionId": "01a176cc-9179-7c53-899c-cdaaad96ea55",
+      "billId": "01a176cc-9763-718f-8a07-aa47ce0efaef",
+      "drugId": "01a176cc-9089-7256-b5a5-365f2f471861"
+    }
+  },
+  "dependencyFailure": {
+    "scenario": "patient-service stopped",
+    "responseStatus": 503,
+    "code": "DEPENDENCY_UNAVAILABLE",
+    "allAppointmentsBefore": 7,
+    "allAppointmentsAfter": 7
+  },
+  "security": {
+    "checks": {
+      "revokedTokenRejectedBySixServices": true,
+      "foreignReadDeniedForAllSevenAccounts": {
+        "identity": 1142,
+        "patient": 1142,
+        "clinic": 1142,
+        "pharmacy": 1142,
+        "billing": 1142,
+        "notification": 1142,
+        "reporting": 1142
+      },
+      "tableCounts": {
+        "identity": {
+          "identity_account_audit": 1,
+          "identity_management_guard": 1,
+          "refresh_token": 29,
+          "user_role": 12,
+          "users": 12
+        },
+        "patient": {
+          "allergy": 0,
+          "owner": 5,
+          "owner_operation": 0,
+          "pet": 5,
+          "vaccination": 0
+        },
+        "clinic": {
+          "appointment": 7,
+          "appointment_schedule_history": 7,
+          "doctor_schedule": 5,
+          "idempotency_record": 7,
+          "medical_consultation": 4,
+          "medical_consultation_operation": 12,
+          "medical_record": 4,
+          "prescription": 4,
+          "prescription_item": 4,
+          "schedule_guard": 5,
+          "schedule_operation": 5
+        },
+        "pharmacy": {
+          "dispense_item": 3,
+          "dispense_record": 3,
+          "drug": 4,
+          "idempotency_record": 3,
+          "inventory": 4,
+          "inventory_adjustment": 4,
+          "pharmacy_prescription_task": 4
+        },
+        "billing": {
+          "bill": 3,
+          "bill_item": 3,
+          "bill_operation": 6,
+          "charge_item": 3,
+          "idempotency_record": 6,
+          "payment_record": 3
+        },
+        "notification": {
+          "notification": 17
+        },
+        "reporting": {
+          "reporting_drug_consumption_fact": 3,
+          "reporting_revenue_fact": 3,
+          "reporting_visit_fact": 4
+        }
+      },
+      "identityOutageReturns503": true
+    },
+    "requests": [
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/identity/users",
+        "status": 201
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "GET",
+        "path": "/api/identity/employees?query=w06.revoke.cfadf48e6cc6",
+        "status": 200
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/identity/employees/01a176c0-ff1f-79e2-bd9c-b349e432cf3e/password-reset",
+        "status": 204
+      },
+      {
+        "service": "patient",
+        "method": "GET",
+        "path": "/api/owner/clients",
+        "status": 401,
+        "code": "AUTH_UNAUTHENTICATED"
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/appointment/doctors",
+        "status": 401,
+        "code": "AUTH_UNAUTHENTICATED"
+      },
+      {
+        "service": "pharmacy",
+        "method": "GET",
+        "path": "/api/pharmacy/drugs",
+        "status": 401,
+        "code": "AUTH_UNAUTHENTICATED"
+      },
+      {
+        "service": "billing",
+        "method": "GET",
+        "path": "/api/billing/charge-items",
+        "status": 401,
+        "code": "AUTH_UNAUTHENTICATED"
+      },
+      {
+        "service": "notification",
+        "method": "GET",
+        "path": "/api/notification/notifications",
+        "status": 401,
+        "code": "AUTH_UNAUTHENTICATED"
+      },
+      {
+        "service": "reporting",
+        "method": "GET",
+        "path": "/api/reporting/visits?from=2026-10-26&to=2026-10-26",
+        "status": 401,
+        "code": "AUTH_UNAUTHENTICATED"
+      },
+      {
+        "service": "identity",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "status": 200
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/appointment/doctors",
+        "status": 200
+      },
+      {
+        "service": "patient",
+        "method": "GET",
+        "path": "/api/owner/clients",
+        "status": 503,
+        "code": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "service": "clinic",
+        "method": "GET",
+        "path": "/api/appointment/doctors",
+        "status": 503,
+        "code": "DEPENDENCY_UNAVAILABLE"
+      }
+    ]
+  },
+  "eventConsumption": {
+    "duplicateEventRowsBefore": {
+      "notification": 17,
+      "visits": 4
+    },
+    "duplicateEventRowsAfter": {
+      "notification": 17,
+      "visits": 4
+    },
+    "internalCredentialsRequiredForSevenServices": true,
+    "gatewayInternalPathStatus": 404,
+    "unicodePatientSearch": true
+  },
+  "nativeProcessRestartPersistence": {
+    "result": "PASS",
+    "previousFixtureAppointmentsAfterRestart": 2,
+    "containerVolumeClaim": false
+  },
+  "knownLimits": [
+    "Point-in-time remote admission validation; state may change before local commit.",
+    "After-commit HTTP events may be lost; no automatic redelivery or distributed rollback.",
+    "Pharmacy list currently reconciles all committed prescriptions in pages.",
+    "Docker image build, container startup and volume persistence remain unverified."
+  ]
+}
