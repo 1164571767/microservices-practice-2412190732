@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: clinic-service
+  cloud:
+    nacos:
+      discovery:
+        enabled: ${NACOS_DISCOVERY_ENABLED:true}
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:PETCARE_SFY_GROUP}
   config:
     import: optional:file:./.env[.properties]
   datasource:
@@ -84,7 +93,6 @@ management:
 
 services:
   identity-url: ${IDENTITY_SERVICE_URL:http://localhost:8081}
-  patient-url: ${PATIENT_SERVICE_URL:http://localhost:8082}
   clinic-url: ${CLINIC_SERVICE_URL:http://localhost:8083}
   pharmacy-url: ${PHARMACY_SERVICE_URL:http://localhost:8084}
   billing-url: ${BILLING_SERVICE_URL:http://localhost:8085}

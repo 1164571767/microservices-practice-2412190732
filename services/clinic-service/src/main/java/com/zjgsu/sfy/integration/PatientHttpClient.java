@@ -12,23 +12,23 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 public class PatientHttpClient implements OwnerApi {
   private final HttpTransport http;
-  private final PeerProperties peers;
+  private final DiscoveredServiceAddress addresses;
 
-  public PatientHttpClient(HttpTransport http, PeerProperties peers) {
+  public PatientHttpClient(HttpTransport http, DiscoveredServiceAddress addresses) {
     this.http = http;
-    this.peers = peers;
+    this.addresses = addresses;
   }
 
   public Optional<PetSummary> findPet(UUID id) {
     return Optional.ofNullable(
         http.get(
-            peers.getPatientUrl() + "/internal/patients/pets/" + id,
+            addresses.patient() + "/internal/patients/pets/" + id,
             new ParameterizedTypeReference<PetSummary>() {}));
   }
 
   public void requireActivePetForBooking(UUID id) {
     http.post(
-        peers.getPatientUrl() + "/internal/patients/pets/" + id + "/admission",
+        addresses.patient() + "/internal/patients/pets/" + id + "/admission",
         Map.of(),
         new ParameterizedTypeReference<Void>() {});
   }
@@ -36,27 +36,27 @@ public class PatientHttpClient implements OwnerApi {
   public Optional<UUID> findOwnerIdByUser(UUID id) {
     return Optional.ofNullable(
         http.get(
-            peers.getPatientUrl() + "/internal/patients/owners/by-user/" + id,
+            addresses.patient() + "/internal/patients/owners/by-user/" + id,
             new ParameterizedTypeReference<UUID>() {}));
   }
 
   public Optional<UUID> findUserIdByPet(UUID id) {
     return Optional.ofNullable(
         http.get(
-            peers.getPatientUrl() + "/internal/patients/pets/" + id + "/user",
+            addresses.patient() + "/internal/patients/pets/" + id + "/user",
             new ParameterizedTypeReference<UUID>() {}));
   }
 
   public List<PharmacyAllergy> pharmacyAllergies(UUID id) {
     return http.required(
         http.get(
-            peers.getPatientUrl() + "/internal/patients/pets/" + id + "/allergies",
+            addresses.patient() + "/internal/patients/pets/" + id + "/allergies",
             new ParameterizedTypeReference<List<PharmacyAllergy>>() {}));
   }
 
   public List<UUID> searchPatientIds(String query) {
     String url =
-        UriComponentsBuilder.fromUriString(peers.getPatientUrl() + "/internal/patients/search")
+        UriComponentsBuilder.fromUriString(addresses.patient() + "/internal/patients/search")
             .queryParam("query", query)
             .build()
             .encode()
@@ -67,7 +67,7 @@ public class PatientHttpClient implements OwnerApi {
   public Map<UUID, PatientContactSummary> patientContacts(Collection<UUID> ids) {
     return http.required(
         http.post(
-            peers.getPatientUrl() + "/internal/patients/contacts",
+            addresses.patient() + "/internal/patients/contacts",
             ids,
             new ParameterizedTypeReference<Map<UUID, PatientContactSummary>>() {}));
   }

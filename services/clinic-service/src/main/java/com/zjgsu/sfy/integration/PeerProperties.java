@@ -6,13 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "services")
 public class PeerProperties {
-  private String identityUrl,
-      patientUrl,
-      clinicUrl,
-      pharmacyUrl,
-      billingUrl,
-      notificationUrl,
-      reportingUrl;
+  private String identityUrl, clinicUrl, pharmacyUrl, billingUrl, notificationUrl, reportingUrl;
 
   public String getIdentityUrl() {
     return identityUrl;
@@ -20,14 +14,6 @@ public class PeerProperties {
 
   public void setIdentityUrl(String value) {
     identityUrl = value;
-  }
-
-  public String getPatientUrl() {
-    return patientUrl;
-  }
-
-  public void setPatientUrl(String value) {
-    patientUrl = value;
   }
 
   public String getClinicUrl() {

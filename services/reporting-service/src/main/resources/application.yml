@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: reporting-service
+  cloud:
+    nacos:
+      discovery:
+        enabled: ${NACOS_DISCOVERY_ENABLED:true}
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:PETCARE_SFY_GROUP}
   config:
     import: optional:file:./.env[.properties]
   datasource:

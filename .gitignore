@@ -48,3 +48,7 @@ __pycache__/
 *.tsbuildinfo
 *.log
 monolith/HELP.md
+
+# Local Nacos SDK snapshots and logs
+/nacos/
+**/logs/nacos/
