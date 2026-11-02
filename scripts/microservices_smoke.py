@@ -71,6 +71,14 @@ def appointments(context, token):
     return request("clinic", "GET", f"/api/appointment/pets/{context['petId']}/appointments", token=token)
 
 
+def check_nacos_console():
+    base = SETTINGS.get("NACOS_CONSOLE_URL", "http://127.0.0.1:" + SETTINGS.get("NACOS_CONSOLE_PORT", "18080")).rstrip("/")
+    with urlopen(base + "/", timeout=10) as response:
+        assert response.status == 200, "Nacos console did not return HTTP 200"
+        assert b"<html" in response.read().lower(), "Nacos console returned no HTML page"
+    print("200 nacos-console " + base + "/", flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--health-only", action="store_true")
@@ -82,19 +90,30 @@ def main():
         context = json.loads(args.context.read_text(encoding="utf-8"))
         token = login(context["username"], context["password"])
         if args.dependency_failure:
-            response = request("clinic", "POST", "/api/appointment/appointments", context["booking"], token, 503, "down-" + uuid.uuid4().hex)
+            # A different unused slot prevents a replay/conflict from masking failed admission.
+            booking = dict(context["booking"])
+            for field in ("startAt", "endAt"):
+                value = datetime.fromisoformat(booking[field].replace("Z", "+00:00")) + timedelta(minutes=15)
+                booking[field] = value.isoformat().replace("+00:00", "Z")
+            context["failedBooking"] = booking
+            args.context.write_text(json.dumps(context, ensure_ascii=False, indent=2), encoding="utf-8")
+            response = request("clinic", "POST", "/api/appointment/appointments", booking, token, 503, "down-" + uuid.uuid4().hex)
             assert response["code"] == "DEPENDENCY_UNAVAILABLE"
         else:
             count = len(appointments(context, token))
             assert count == context["appointmentCount"], f"Unexpected data change: {count}"
             print(f"PASS dependency failure left appointment count unchanged: {count}")
+            request("clinic", "POST", "/api/appointment/appointments", context["failedBooking"], token, 201, "restored-" + uuid.uuid4().hex)
+            assert len(appointments(context, token)) == count + 1
+            print(f"PASS restored booking succeeds: appointments {count} -> {count + 1}")
         return
 
+    check_nacos_console()
     for name in NAMES:
         health = request(name, "GET", "/actuator/health")
         assert health["status"] == "UP", f"{name} is not UP"
     if args.health_only:
-        print("PASS seven services UP")
+        print("PASS Nacos console accessible; seven services UP")
         return
 
     username = SETTINGS.get("BOOTSTRAP_ADMIN_USERNAME")

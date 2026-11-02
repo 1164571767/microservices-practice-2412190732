@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Checks the Nacos 3 console and all seven application health endpoints before business checks.
+# Python failures are propagated unchanged through exec; credentials are never echoed.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 if [[ -n "${PYTHON:-}" ]]; then
