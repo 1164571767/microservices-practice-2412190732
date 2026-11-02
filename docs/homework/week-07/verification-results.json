@@ -1,0 +1,307 @@
+{
+  "recordedAt": "2026-11-02T14:37:51.164391+08:00",
+  "flow": "clinic-service -> DiscoveryClient(patient-service) -> original patient admission API",
+  "group": "PETCARE_SFY_GROUP",
+  "namespace": "public",
+  "appointments": {
+    "beforeFailure": 4,
+    "afterFailure": 4,
+    "afterRecovery": 5
+  },
+  "expectedFailedHealthExit": 1,
+  "businessRequest": {
+    "petId": "01a19af9-9d69-7838-bf18-f7f027dabd93",
+    "doctorId": "01a19af9-9ecd-79b1-9953-278c3d7d64cf",
+    "startAt": "2026-11-02T06:51:00Z",
+    "endAt": "2026-11-02T07:06:00Z"
+  },
+  "failedAndRecoveredRequest": {
+    "petId": "01a19af9-9d69-7838-bf18-f7f027dabd93",
+    "doctorId": "01a19af9-9ecd-79b1-9953-278c3d7d64cf",
+    "startAt": "2026-11-02T07:06:00Z",
+    "endAt": "2026-11-02T07:21:00Z"
+  },
+  "petId": "01a19af9-9d69-7838-bf18-f7f027dabd93",
+  "appointmentId": "01a19af9-aa10-7767-b9f5-04bacf9f2f68",
+  "normalStatus": 201,
+  "missingResourceStatus": 404,
+  "dependencyDownStatus": 503,
+  "recoveryStatus": 201,
+  "registered": {
+    "passed": true,
+    "services": [
+      {
+        "service": "identity-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.5",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      },
+      {
+        "service": "patient-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.6",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      },
+      {
+        "service": "clinic-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.8",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      },
+      {
+        "service": "pharmacy-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.9",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      },
+      {
+        "service": "billing-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.10",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      },
+      {
+        "service": "notification-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.11",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      },
+      {
+        "service": "reporting-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.7",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      }
+    ]
+  },
+  "unregistered": {
+    "passed": true,
+    "services": [
+      {
+        "service": "patient-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": []
+      }
+    ]
+  },
+  "restored": {
+    "passed": true,
+    "services": [
+      {
+        "service": "patient-service",
+        "group": "PETCARE_SFY_GROUP",
+        "namespace": "public",
+        "instances": [
+          {
+            "ip": "172.19.0.6",
+            "port": 8080,
+            "healthy": true
+          }
+        ]
+      }
+    ]
+  },
+  "clinicHealthWhilePatientDown": {
+    "groups": [
+      "liveness",
+      "readiness"
+    ],
+    "status": "UP"
+  },
+  "patientHealthRestored": {
+    "groups": [
+      "liveness",
+      "readiness"
+    ],
+    "status": "UP"
+  },
+  "build": {
+    "command": "mvn -B -f services/pom.xml verify",
+    "result": "PASS",
+    "tests": {
+      "billing-service": {
+        "tests": 25,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "clinic-service": {
+        "tests": 33,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "identity-service": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "notification-service": {
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "patient-service": {
+        "tests": 24,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "pharmacy-service": {
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "reporting-service": {
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "totalTests": 148,
+    "dockerSourceBuilds": "All seven week07 service images built successfully"
+  },
+  "environment": {
+    "host": "VMware Ubuntu 22.04",
+    "cpu": 2,
+    "memoryGiB": 4,
+    "diskGiB": 100,
+    "nacosImage": "nacos/nacos-server:v3.2.4",
+    "nacosConsole": "http://127.0.0.1:18080/",
+    "nacosServerPort": 8848,
+    "nacosSdkPort": 9848,
+    "gatewayPort": 18090,
+    "nacosInitializationAndRestartLogin": "PASS",
+    "nacosImageDigest": [
+      "nacos/nacos-server@sha256:1c191c30c8cd5ff2a72bf576555dbaa57a616378c55168651a74aefadedf7708"
+    ]
+  },
+  "containers": [
+    {
+      "Service": "billing-service",
+      "Image": "petcare-billing:week07",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8085->8080/tcp"
+    },
+    {
+      "Service": "clinic-service",
+      "Image": "petcare-clinic:week07",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8083->8080/tcp"
+    },
+    {
+      "Service": "gateway",
+      "Image": "petcare-gateway:week06",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "80/tcp, 0.0.0.0:18090->8080/tcp, [::]:18090->8080/tcp"
+    },
+    {
+      "Service": "identity-service",
+      "Image": "petcare-identity:week07",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8081->8080/tcp"
+    },
+    {
+      "Service": "micro-mysql",
+      "Image": "mysql:8.4.11",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "3306/tcp, 33060/tcp"
+    },
+    {
+      "Service": "nacos",
+      "Image": "nacos/nacos-server:v3.2.4",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8848->8848/tcp, 127.0.0.1:9848->9848/tcp, 127.0.0.1:18080->8080/tcp"
+    },
+    {
+      "Service": "notification-service",
+      "Image": "petcare-notification:week07",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8086->8080/tcp"
+    },
+    {
+      "Service": "patient-service",
+      "Image": "petcare-patient:week07",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8082->8080/tcp"
+    },
+    {
+      "Service": "pharmacy-service",
+      "Image": "petcare-pharmacy:week07",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8084->8080/tcp"
+    },
+    {
+      "Service": "reporting-service",
+      "Image": "petcare-reporting:week07",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "127.0.0.1:8087->8080/tcp"
+    }
+  ],
+  "commandOutput": {
+    "normal": "200 nacos-console http://127.0.0.1:18080/\n200 identity     GET  /actuator/health\n200 patient      GET  /actuator/health\n200 clinic       GET  /actuator/health\n200 pharmacy     GET  /actuator/health\n200 billing      GET  /actuator/health\n200 notification GET  /actuator/health\n200 reporting    GET  /actuator/health\n200 identity     POST /api/auth/login\n201 identity     POST /api/auth/register\n200 identity     POST /api/auth/login\n200 patient      PUT  /api/owner/me\n201 patient      POST /api/owner/pets\n201 identity     POST /api/identity/users\n201 clinic       POST /api/appointment/schedules\n200 clinic       GET  /api/appointment/pets/01a19af9-9d69-7838-bf18-f7f027dabd93/appointments\n201 clinic       POST /api/appointment/appointments\n201 clinic       POST /api/appointment/appointments\n200 clinic       GET  /api/appointment/pets/01a19af9-9d69-7838-bf18-f7f027dabd93/appointments\nPASS real HTTP booking: appointments 0 -> 1; idempotent replay adds 0\n404 clinic       POST /api/appointment/appointments [RESOURCE_NOT_FOUND]\n200 clinic       GET  /api/appointment/pets/01a19af9-9d69-7838-bf18-f7f027dabd93/appointments\nPASS missing pet: 404; appointment count stays 1\nPASS smoke checks; demonstration data retained for inspection\n",
+    "down": "200 identity     POST /api/auth/login\n503 clinic       POST /api/appointment/appointments [DEPENDENCY_UNAVAILABLE]\n",
+    "restored": "200 identity     POST /api/auth/login\n200 clinic       GET  /api/appointment/pets/01a19af9-9d69-7838-bf18-f7f027dabd93/appointments\nPASS dependency failure left appointment count unchanged: 1\n201 clinic       POST /api/appointment/appointments\n200 clinic       GET  /api/appointment/pets/01a19af9-9d69-7838-bf18-f7f027dabd93/appointments\nPASS restored booking succeeds: appointments 1 -> 2\n",
+    "health": "200 nacos-console http://127.0.0.1:18080/\n200 identity     GET  /actuator/health\n200 patient      GET  /actuator/health\n200 clinic       GET  /actuator/health\n200 pharmacy     GET  /actuator/health\n200 billing      GET  /actuator/health\n200 notification GET  /actuator/health\n200 reporting    GET  /actuator/health\nPASS Nacos console accessible; seven services UP\n",
+    "expectedHealthFailure": "200 nacos-console http://127.0.0.1:18080/\n200 identity     GET  /actuator/health\nFAIL patient GET /actuator/health: connection failed: <urlopen error [Errno 111] Connection refused>\n",
+    "discoveredAddresses": "clinic-service-1  | 2026-11-02T14:36:54.886+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-2] [6ae82f86a24a3f39e220ba29acc8b6af-0af0f608db8310e7] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:55.055+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-2] [6ae82f86a24a3f39e220ba29acc8b6af-0af0f608db8310e7] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:55.291+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-3] [6ae82f8782eb3d4c9e13ad8b6d8eb0b0-d430545849f6ee82] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:55.326+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-3] [6ae82f8782eb3d4c9e13ad8b6d8eb0b0-d430545849f6ee82] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:55.489+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-3] [6ae82f8782eb3d4c9e13ad8b6d8eb0b0-d430545849f6ee82] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:56.645+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-4] [6ae82f885a5865904e7eab9ee6248d59-18ddad116cab82a6] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:56.668+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-4] [6ae82f885a5865904e7eab9ee6248d59-18ddad116cab82a6] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:56.774+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-5] [6ae82f885bc17d37437c9e68e7a05bc8-c475b400223029a4] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:56.794+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-5] [6ae82f885bc17d37437c9e68e7a05bc8-c475b400223029a4] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:56.856+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-6] [6ae82f88be897f1dbdbbcf45e74e48f7-6dadc3b7ed2d706d] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:56.937+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-8] [6ae82f88a2f98a94791309dec6c7d082-b253323c8c9ae433] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:36:56.959+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-8] [6ae82f88a2f98a94791309dec6c7d082-b253323c8c9ae433] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:37:48.684+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-1] [6ae82fbc8a1fc256385f0384530c0936-b5b4f9f9985497ee] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:37:49.068+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-1] [6ae82fbc8a1fc256385f0384530c0936-b5b4f9f9985497ee] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:37:49.589+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-3] [6ae82fbd56ffe6a520971a9d80060c72-4f1ce5e6cad640cd] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:37:49.649+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-3] [6ae82fbd56ffe6a520971a9d80060c72-4f1ce5e6cad640cd] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:37:49.703+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-3] [6ae82fbd56ffe6a520971a9d80060c72-4f1ce5e6cad640cd] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:37:50.019+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-4] [6ae82fbd72d8d6f689bee37bfdf5894f-99c2b9a9bf3dad61] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\nclinic-service-1  | 2026-11-02T14:37:50.050+08:00  INFO 1 --- [clinic-service] [nio-8080-exec-4] [6ae82fbd72d8d6f689bee37bfdf5894f-99c2b9a9bf3dad61] c.z.s.i.DiscoveredServiceAddress         : Discovered service=patient-service uri=http://172.19.0.6:8080\n",
+    "mavenVerifySummary": "[INFO] Analyzed bundle 'reporting-service' with 80 classes\n[INFO] \n[INFO] -------------------< com.zjgsu.sfy:petcare-services >-------------------\n[INFO] Building petcare-services 0.0.1-SNAPSHOT                           [8/8]\n[INFO]   from pom.xml\n[INFO] --------------------------------[ pom ]---------------------------------\n[INFO] ------------------------------------------------------------------------\n[INFO] Reactor Summary for petcare-services 0.0.1-SNAPSHOT:\n[INFO] \n[INFO] identity-service ................................... SUCCESS [ 14.609 s]\n[INFO] patient-service .................................... SUCCESS [ 11.312 s]\n[INFO] clinic-service ..................................... SUCCESS [ 30.346 s]\n[INFO] pharmacy-service ................................... SUCCESS [ 13.340 s]\n[INFO] billing-service .................................... SUCCESS [ 13.550 s]\n[INFO] notification-service ............................... SUCCESS [ 12.264 s]\n[INFO] reporting-service .................................. SUCCESS [ 12.849 s]\n[INFO] petcare-services ................................... SUCCESS [  0.000 s]\n[INFO] ------------------------------------------------------------------------\n[INFO] BUILD SUCCESS\n[INFO] ------------------------------------------------------------------------\n[INFO] Total time:  01:49 min\n[INFO] Finished at: 2026-11-02T13:55:53+08:00\n[INFO] ------------------------------------------------------------------------"
+  }
+}

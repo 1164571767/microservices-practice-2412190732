@@ -1,4 +1,4 @@
-# PetCare 微服务设计（第 06 周）
+# PetCare 微服务设计（第 06–07 周）
 
 ## 1. 目标与已确认边界
 
@@ -83,7 +83,7 @@ Nginx 按现有 `/api/auth/**`、`identity`、`owner`、`appointment`、`medical
 - `GET /internal/clinic/prescription-index?page=0&size=100`：分页读取处方交接索引。
 - `POST /internal/events/BillPaid` 等：消费允许的具体事件类型，不接受任意类名或动态反射调用。
 
-所有客户端使用 `RestTemplate`，连接超时默认 2 秒、读取超时默认 5 秒；URL、超时和服务令牌在各自 `application.yml` 中声明，可通过环境变量覆盖。普通业务写请求不自动重试。集合分页使用显式 JSON DTO，避免跨进程直接序列化 Spring Data 的分页实现。中文搜索参数只编码一次。
+所有客户端使用 `RestTemplate`，连接超时默认 2 秒、读取超时默认 5 秒；超时和服务令牌在各自 `application.yml` 中声明，可通过环境变量覆盖。第 07 周将诊疗到患者档案的全部请求改为按 `patient-service` 服务名发现实例，删除诊疗服务原患者固定 URL；其他调用继续使用原显式地址。普通业务写请求不自动重试。集合分页使用显式 JSON DTO，避免跨进程直接序列化 Spring Data 的分页实现。中文搜索参数只编码一次。
 
 各服务本地验证 JWT 签名、签发者、有效期及 access 类型，然后通过 HTTP 核对身份服务的账号状态和 `sv` 会话版本；不缓存这项检查。旧会话返回 401，身份依赖不可用返回 503，保留原系统的改密/停用后撤销会话语义。已进入执行的请求不追溯撤销。
 
@@ -132,7 +132,7 @@ Nginx 按现有 `/api/auth/**`、`identity`、`owner`、`appointment`、`medical
 
 ## 8. 部署与验证
 
-根目录 `compose.yaml` 编排七个应用、一个 MySQL 实例和一个 Nginx 前端入口。`scripts/mysql-init-services.sh` 在新数据卷初始化七库七账号；运行时不使用 root。卷 `micro-mysql-data` 保存微服务数据。账号密码变更后不能指望初始化脚本在已有卷重跑，需显式维护账号，不能为了更新密码直接删除数据卷。
+根目录 `compose.yaml` 编排 Nacos、七个应用、一个 MySQL 实例和一个 Nginx 前端入口。`scripts/mysql-init-services.sh` 在新数据卷初始化七库七账号；运行时不使用 root。卷 `micro-mysql-data` 保存微服务数据。账号密码变更后不能指望初始化脚本在已有卷重跑，需显式维护账号，不能为了更新密码直接删除数据卷。
 
 Java 镜像构建使用带锁的 BuildKit Maven 缓存，七个工程可以复用依赖下载，同时避免并行写同一缓存。小型 Docker 主机可通过 `JAVA_OPTS` 覆盖 JVM 内存与 CPU 参数；这不改变业务配置。所有服务仍从各自源码独立构建，不依赖宿主机预编译 JAR。
 
@@ -141,3 +141,15 @@ Compose 按必要依赖分阶段启动：身份服务先就绪，再启动档案
 原 Compose 原样保留为根目录 `compose.monolith.yaml`，仍使用原项目名和原 `mysql-data` 卷。默认两个版本都使用入口 8080，同时运行时需给其中一个设置不同 `APP_PORT`。微服务之间不读取单体数据库。
 
 运行命令、实际状态码、数据变化、截图、环境限制和提交说明见 [第 06 周记录](homework/week-06/index.md)。测试包括每服务领域测试、真实回环 HTTP 的序列化/错误/超时测试、数据所有权约束，以及整条业务链与前端联调。
+
+## 9. 第 07 周：服务注册与发现
+
+Nacos 使用 `nacos/nacos-server:v3.2.4`，单机内置存储通过独立命名卷持久化。首次只启动 Nacos，初始化管理员密码后再启动业务服务。控制台容器端口 8080 映射回环地址 18080；服务端 8848 和 SDK gRPC 9848 分别映射回环同号端口，容器内通过 `nacos:8848` 连接。鉴权密钥、节点身份和密码仅来自本地 `.env`。
+
+七个服务保留各自 `spring.application.name`，统一默认命名空间和 `PETCARE_SFY_GROUP`。同一服务多实例使用相同服务名，不同业务服务禁止复用同一名称；自定义命名空间必须先创建并填写实际 Namespace ID。每个独立工程通过兼容 Boot 4.0.x 的 Spring Cloud 2025.1.0 / Spring Cloud Alibaba 2025.1.0.0 BOM 管理 Discovery Starter，不引入 Config Starter，不覆盖 Nacos Client 版本。
+
+诊疗服务每次患者档案请求都调用 `DiscoveryClient.getInstances("patient-service")`，选择一个当前已知实例并使用其 URI 请求原内部路径。禁止启动时永久缓存地址、固定 URL 回退、空列表视为校验成功。空列表和发现异常映射为 503；旧地址连接失败沿用传输层的 503，404/409 等合法业务错误继续保留。注册中心传播有延迟，停止实例后可能短暂仍查到旧地址；不承诺实时全局一致，不额外实现轮询、重试或熔断。
+
+SDK 连接状态只表示客户端到注册中心的通信；Nacos 实例健康表示注册表视角；Actuator 表示当前应用及本地数据库的检查结果。患者服务停止后，诊疗自身仍可能是 UP，但预约依赖校验必须失败；不得假设 Actuator DOWN 自动触发 Nacos 摘除。服务发现不改变第 6–7 节的本地事务边界和跨服务非原子窗口。
+
+实际注册、下线、恢复及检查结果见 [第 07 周记录](homework/week-07/index.md)。关键失败行为由诊疗服务的模拟发现测试、真实回环 HTTP 测试及本地数据库不落库断言保护，不重复创建独立 Harness 文档。

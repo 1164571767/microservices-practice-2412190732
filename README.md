@@ -1,3 +1,81 @@
+# 第 07 周：Nacos 注册与服务发现
+
+继续使用 `services/` 下七个独立工程，Java 25、Spring Boot 4.0.8，基础包 `com.zjgsu.sfy`。Spring Cloud BOM `2025.1.0` 与 Spring Cloud Alibaba BOM `2025.1.0.0` 管理 Discovery Starter；不单独覆盖 Nacos Client，不引入 Config Starter。
+
+七个服务名保持 [微服务设计](docs/microservices-design.md) 中的 `identity-service`、`patient-service`、`clinic-service`、`pharmacy-service`、`billing-service`、`notification-service`、`reporting-service`。统一使用默认命名空间（Namespace ID 留空）及 `PETCARE_SFY_GROUP`。
+
+## 首次部署与初始化
+
+在装有 Docker Engine、Compose v2+、Bash、Python 3.10+ 的主机上，从仓库根目录执行：
+
+```bash
+cp .env.example .env  # 仅首次；已有文件时合并新增字段，保留原密码
+# 编辑 .env：设置数据库密码、JWT_SECRET、SERVICE_TOKEN、引导管理员资料，
+# 并填写 NACOS_AUTH_TOKEN、NACOS_AUTH_IDENTITY_KEY、NACOS_AUTH_IDENTITY_VALUE。
+# NACOS_AUTH_TOKEN 是至少 32 个随机字节的 Base64，可用下面命令生成后保存在 .env：
+python3 -c 'import secrets,base64; print(base64.b64encode(secrets.token_bytes(48)).decode())'
+# 自行设置强随机 NACOS_PASSWORD；下一步将其用于首次初始化，不能保留模板占位值。
+docker compose config --quiet
+docker compose up -d --wait --wait-timeout 300 nacos
+python3 scripts/nacos-check.py --initialize  # 仅全新 Nacos 数据卷执行一次
+# 或通过 http://127.0.0.1:18080 首次初始化，使用与 .env 相同的密码；二选一。
+docker compose up -d --build --wait --wait-timeout 900
+docker compose ps
+bash scripts/smoke-test.sh
+python3 scripts/nacos-check.py --wait 120
+```
+
+Nacos 固定镜像 `nacos/nacos-server:v3.2.4`；控制台是 **http://127.0.0.1:18080/**（容器 8080），服务端是 `127.0.0.1:8848`，SDK gRPC 是 `127.0.0.1:9848`。8848 的 `/nacos` 不是本周控制台地址。业务容器使用 `NACOS_SERVER_ADDR=nacos:8848`，默认业务健康端口为 127.0.0.1:8081–8087，前端入口为 `APP_PORT`（默认 8080）。所有 Nacos 发布端口绑定回环地址；远程查看控制台可用 SSH 转发 `ssh -L 18080:127.0.0.1:18080 ubuntu@<虚拟机IP>`，然后访问本机控制台地址。
+
+鉴权始终开启。`.env` 不提交；Nacos 内置数据库与日志分别使用命名卷 `nacos-data`、`nacos-logs`，业务继续使用原独立数据库账号。不要执行 `down -v` 清除已有数据。初始化完成后，后续启动只需 `docker compose up -d --build --wait --wait-timeout 900`，无需重复初始化。修改 `.env` 的管理员密码不会自动修改 Nacos 已保存的密码。
+
+## 业务调用、下线与恢复验证
+
+选择“创建预约前校验宠物档案”：`clinic-service` 每次通过 `DiscoveryClient.getInstances("patient-service")` 获取当前已知实例，再请求实例 URI 对应的原 `/internal/patients/**` 路径。诊疗服务不再配置 `PATIENT_SERVICE_URL`；其他现有调用保留原配置。超时仍为连接 2 秒、读取 5 秒，不自动重试。空实例或连接失败返回 503，资源不存在保持 404，禁止跳过校验保存预约。
+
+```bash
+# 查看同组七个服务的真实实例 IP、端口和健康状态
+python3 scripts/nacos-check.py --wait 120
+# 控制台：服务管理 → 服务列表；选择 public 命名空间及 PETCARE_SFY_GROUP
+bash scripts/smoke-test.sh --health-only
+bash scripts/smoke-test.sh  # 创建独立演示资料、预约，核对 201、幂等重放、404
+docker compose logs --tail=30 clinic-service | grep 'Discovered service='
+
+docker compose stop patient-service
+python3 scripts/nacos-check.py --service patient-service --expect-count 0 --wait 120
+bash scripts/smoke-test.sh --dependency-failure  # 新幂等键、另一个有效时段，预期 503
+docker compose start patient-service
+python3 scripts/nacos-check.py --service patient-service --expect-count 1 --wait 120
+# 等待患者健康接口返回 UP，再核对失败未新增，并用失败时段重新预约成功：
+curl -fsS http://127.0.0.1:8082/actuator/health
+bash scripts/smoke-test.sh --verify-restored
+bash scripts/smoke-test.sh --health-only
+```
+
+脚本默认读取根目录 `.env`，从根目录运行 `bash scripts/smoke-test.sh`；控制台或任一应用健康/业务断言失败均退出非零。`--health-only` 检查控制台 HTTP 200 和七个 `/actuator/health` 的 `UP`，业务成功、下线失败和恢复成功须按上述步骤单独核对。`NACOS_CONSOLE_URL` / `NACOS_API_URL` 可覆盖宿主机检查地址；`NACOS_GROUP`、`NACOS_NAMESPACE` 与服务配置必须一致。脚本中的宿主机业务地址覆盖变量仅用于验证入口，不是诊疗服务内部寻址配置。
+
+## 各服务测试
+
+也可在隔离演示环境从根目录运行 `bash scripts/verify-week07.sh`，自动执行同一预约链的正常、停止、503 无新增、恢复及重新预约验证。该脚本会短暂停止并恢复 `patient-service`，通过诊疗库所属账号检查预约总数；结果保存在已忽略的 `.artifacts/week07/`，不打印凭据。
+
+测试无需启动真实 Nacos 或 MySQL，测试配置关闭 Nacos 注册，远程响应用本地模拟 HTTP。进入各独立工程执行：
+
+```bash
+(cd services/identity-service && mvn -B test)
+(cd services/patient-service && mvn -B test)
+(cd services/clinic-service && mvn -B test)
+(cd services/pharmacy-service && mvn -B test)
+(cd services/billing-service && mvn -B test)
+(cd services/notification-service && mvn -B test)
+(cd services/reporting-service && mvn -B test)
+# 或从根目录完整验证七个服务：
+mvn -B -f services/pom.xml verify
+```
+
+本周实际部署、健康区别、请求、数据核对和截图见 [第 07 周记录](docs/homework/week-07/index.md)。下方原有说明保留；当前微服务 Compose 首次运行须先完成上面的 Nacos 初始化。
+
+---
+
 # microservices-practice-2412190732
 微服务开发与实践 宋方壹 2412190732微服务课程仓库
 项目名称
