@@ -1,0 +1,34 @@
+spring:
+  config:
+    import: ""
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+        register-enabled: false
+    service-registry:
+      auto-registration:
+        enabled: false
+  datasource:
+    url: jdbc:h2:mem:petcare-test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  flyway:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+petcare:
+  security:
+    jwt:
+      secret: test-only-jwt-secret-of-at-least-32-characters
+    bootstrap-admin:
+      username: ""
+      password: ""
+      phone: ""
+  notification:
+    revisit-reminder:
+      enabled: false
+services:
+  token: test-only-internal-secret-of-at-least-32-characters
