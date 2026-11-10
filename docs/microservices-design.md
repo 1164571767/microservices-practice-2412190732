@@ -83,7 +83,7 @@ Nginx 按现有 `/api/auth/**`、`identity`、`owner`、`appointment`、`medical
 - `GET /internal/clinic/prescription-index?page=0&size=100`：分页读取处方交接索引。
 - `POST /internal/events/BillPaid` 等：消费允许的具体事件类型，不接受任意类名或动态反射调用。
 
-所有客户端使用 `RestTemplate`，连接超时默认 2 秒、读取超时默认 5 秒；超时和服务令牌在各自 `application.yml` 中声明，可通过环境变量覆盖。第 07 周将诊疗到患者档案的全部请求改为按 `patient-service` 服务名发现实例，删除诊疗服务原患者固定 URL；其他调用继续使用原显式地址。普通业务写请求不自动重试。集合分页使用显式 JSON DTO，避免跨进程直接序列化 Spring Data 的分页实现。中文搜索参数只编码一次。
+诊疗服务通过 OpenFeign 和 Spring Cloud LoadBalancer 按 `patient-service` 服务名调用患者档案服务。其他调用继续使用 `RestTemplate` 和原显式地址。连接超时默认 2 秒、读取超时默认 5 秒，可通过环境变量覆盖。普通业务写请求不自动重试。集合分页使用显式 JSON DTO，避免跨进程直接序列化 Spring Data 的分页实现。中文搜索参数只编码一次。
 
 各服务本地验证 JWT 签名、签发者、有效期及 access 类型，然后通过 HTTP 核对身份服务的账号状态和 `sv` 会话版本；不缓存这项检查。旧会话返回 401，身份依赖不可用返回 503，保留原系统的改密/停用后撤销会话语义。已进入执行的请求不追溯撤销。
 
@@ -148,7 +148,7 @@ Nacos 使用 `nacos/nacos-server:v3.2.4`，单机内置存储通过独立命名�
 
 七个服务保留各自 `spring.application.name`，统一默认命名空间和 `PETCARE_SFY_GROUP`。同一服务多实例使用相同服务名，不同业务服务禁止复用同一名称；自定义命名空间必须先创建并填写实际 Namespace ID。每个独立工程通过兼容 Boot 4.0.x 的 Spring Cloud 2025.1.0 / Spring Cloud Alibaba 2025.1.0.0 BOM 管理 Discovery Starter，不引入 Config Starter，不覆盖 Nacos Client 版本。
 
-诊疗服务每次患者档案请求都调用 `DiscoveryClient.getInstances("patient-service")`，选择一个当前已知实例并使用其 URI 请求原内部路径。禁止启动时永久缓存地址、固定 URL 回退、空列表视为校验成功。空列表和发现异常映射为 503；旧地址连接失败沿用传输层的 503，404/409 等合法业务错误继续保留。注册中心传播有延迟，停止实例后可能短暂仍查到旧地址；不承诺实时全局一致，不额外实现轮询、重试或熔断。
+诊疗服务每次患者档案请求由 Spring Cloud LoadBalancer 从 Nacos 当前已知实例中轮询选址。无可用实例或通信失败返回 503，404/409 等合法业务错误继续保留。注册变更有传播延迟。Compose 的 `week08` profile 启动同名注册的第二个实例，具体链路和故障边界见[同步服务调用](service-communication.md)。
 
 SDK 连接状态只表示客户端到注册中心的通信；Nacos 实例健康表示注册表视角；Actuator 表示当前应用及本地数据库的检查结果。患者服务停止后，诊疗自身仍可能是 UP，但预约依赖校验必须失败；不得假设 Actuator DOWN 自动触发 Nacos 摘除。服务发现不改变第 6–7 节的本地事务边界和跨服务非原子窗口。
 

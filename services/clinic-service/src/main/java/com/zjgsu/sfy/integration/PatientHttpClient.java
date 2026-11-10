@@ -1,74 +1,69 @@
 package com.zjgsu.sfy.integration;
 
-import com.zjgsu.sfy.identity.*;
-import com.zjgsu.sfy.medical.*;
-import com.zjgsu.sfy.owner.*;
+import com.zjgsu.sfy.common.error.BusinessException;
+import com.zjgsu.sfy.common.error.ErrorCode;
+import com.zjgsu.sfy.owner.OwnerApi;
+import com.zjgsu.sfy.owner.PatientContactSummary;
+import com.zjgsu.sfy.owner.PetSummary;
+import com.zjgsu.sfy.owner.PharmacyAllergy;
+import feign.FeignException;
 import java.util.*;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.domain.*;
+import java.util.function.Supplier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 public class PatientHttpClient implements OwnerApi {
+  private final PatientFeignClient patient;
   private final HttpTransport http;
-  private final DiscoveredServiceAddress addresses;
 
-  public PatientHttpClient(HttpTransport http, DiscoveredServiceAddress addresses) {
+  public PatientHttpClient(PatientFeignClient patient, HttpTransport http) {
+    this.patient = patient;
     this.http = http;
-    this.addresses = addresses;
   }
 
   public Optional<PetSummary> findPet(UUID id) {
-    return Optional.ofNullable(
-        http.get(
-            addresses.patient() + "/internal/patients/pets/" + id,
-            new ParameterizedTypeReference<PetSummary>() {}));
+    return Optional.ofNullable(call(() -> patient.findPet(id)));
   }
 
   public void requireActivePetForBooking(UUID id) {
-    http.post(
-        addresses.patient() + "/internal/patients/pets/" + id + "/admission",
-        Map.of(),
-        new ParameterizedTypeReference<Void>() {});
+    try {
+      patient.requireActivePetForBooking(id);
+    } catch (FeignException ex) {
+      throw translate(ex);
+    }
   }
 
   public Optional<UUID> findOwnerIdByUser(UUID id) {
-    return Optional.ofNullable(
-        http.get(
-            addresses.patient() + "/internal/patients/owners/by-user/" + id,
-            new ParameterizedTypeReference<UUID>() {}));
+    return Optional.ofNullable(call(() -> patient.findOwnerIdByUser(id)));
   }
 
   public Optional<UUID> findUserIdByPet(UUID id) {
-    return Optional.ofNullable(
-        http.get(
-            addresses.patient() + "/internal/patients/pets/" + id + "/user",
-            new ParameterizedTypeReference<UUID>() {}));
+    return Optional.ofNullable(call(() -> patient.findUserIdByPet(id)));
   }
 
   public List<PharmacyAllergy> pharmacyAllergies(UUID id) {
-    return http.required(
-        http.get(
-            addresses.patient() + "/internal/patients/pets/" + id + "/allergies",
-            new ParameterizedTypeReference<List<PharmacyAllergy>>() {}));
+    return http.required(call(() -> patient.pharmacyAllergies(id)));
   }
 
   public List<UUID> searchPatientIds(String query) {
-    String url =
-        UriComponentsBuilder.fromUriString(addresses.patient() + "/internal/patients/search")
-            .queryParam("query", query)
-            .build()
-            .encode()
-            .toUriString();
-    return http.required(http.get(url, new ParameterizedTypeReference<List<UUID>>() {}));
+    return http.required(call(() -> patient.searchPatientIds(query)));
   }
 
   public Map<UUID, PatientContactSummary> patientContacts(Collection<UUID> ids) {
-    return http.required(
-        http.post(
-            addresses.patient() + "/internal/patients/contacts",
-            ids,
-            new ParameterizedTypeReference<Map<UUID, PatientContactSummary>>() {}));
+    return http.required(call(() -> patient.patientContacts(ids)));
+  }
+
+  private <T> T call(Supplier<T> request) {
+    try {
+      return request.get();
+    } catch (FeignException ex) {
+      throw translate(ex);
+    }
+  }
+
+  private BusinessException translate(FeignException ex) {
+    if (ex.status() >= 400 && ex.status() < 500)
+      return http.clientError(ex.status(), ex.contentUTF8());
+    return new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "患者档案服务暂时不可用");
   }
 }

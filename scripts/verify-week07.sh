@@ -50,7 +50,7 @@ after_restored="$(count_appointments)"
 [[ "$after_restored" == "$((before + 1))" ]] || { echo 'FAIL restored booking did not add exactly one appointment'; exit 1; }
 bash scripts/smoke-test.sh --health-only > "$OUT/smoke-health.txt" 2>&1
 restore_needed=0
-docker compose logs --no-color --tail=2000 clinic-service | grep 'Discovered service=patient-service' > "$OUT/discovered-addresses.txt"
+docker compose logs --no-color --tail=2000 patient-service | grep 'Booking admission accepted' > "$OUT/patient-admissions.txt"
 export WEEK07_COUNT_BEFORE="$before" WEEK07_COUNT_FAILED="$after_failure" WEEK07_COUNT_RESTORED="$after_restored" WEEK07_FAILURE_EXIT="$expected_failure_exit"
 "$PYTHON_BIN" - <<'PY'
 import json, os
@@ -61,7 +61,7 @@ context = json.loads(Path('.artifacts/week06-smoke-context.json').read_text())
 registered = json.loads((out/'registered.json').read_text())
 report = {
     'recordedAt': datetime.now().astimezone().isoformat(),
-    'flow': 'clinic-service -> DiscoveryClient(patient-service) -> original patient admission API',
+    'flow': 'clinic-service -> OpenFeign(patient-service) -> original patient admission API',
     'group': registered['services'][0]['group'], 'namespace': registered['services'][0]['namespace'],
     'appointments': {k: int(os.environ[v]) for k, v in {
         'beforeFailure': 'WEEK07_COUNT_BEFORE', 'afterFailure': 'WEEK07_COUNT_FAILED', 'afterRecovery': 'WEEK07_COUNT_RESTORED'}.items()},

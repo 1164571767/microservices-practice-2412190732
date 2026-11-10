@@ -5,6 +5,11 @@ spring:
   application:
     name: clinic-service
   cloud:
+    loadbalancer:
+      cache:
+        enabled: false
+      retry:
+        enabled: false
     nacos:
       discovery:
         enabled: ${NACOS_DISCOVERY_ENABLED:true}

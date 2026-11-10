@@ -68,21 +68,23 @@ public class HttpTransport {
       return rest.exchange(URI.create(url), method, new HttpEntity<>(body, headers), type)
           .getBody();
     } catch (HttpClientErrorException ex) {
-      if (ex.getStatusCode().value() == 401 || ex.getStatusCode().value() == 403)
-        throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "服务间认证失败");
-      try {
-        var error = mapper.readTree(ex.getResponseBodyAsString());
-        var code = ErrorCode.valueOf(error.path("code").asText());
-        if (code.status().value() != ex.getStatusCode().value())
-          throw new IllegalArgumentException();
-        throw new BusinessException(code, error.path("message").asText(code.defaultMessage()));
-      } catch (BusinessException known) {
-        throw known;
-      } catch (RuntimeException malformed) {
-        throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "依赖服务返回无效错误");
-      }
+      throw clientError(ex.getStatusCode().value(), ex.getResponseBodyAsString());
     } catch (RestClientException ex) {
       throw new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "依赖服务连接失败、超时或返回无效响应");
     }
+  }
+
+  BusinessException clientError(int status, String body) {
+    if (status == 401 || status == 403)
+      return new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "服务间认证失败");
+    try {
+      var error = mapper.readTree(body);
+      var code = ErrorCode.valueOf(error.path("code").asText());
+      if (code.status().value() == status)
+        return new BusinessException(code, error.path("message").asText(code.defaultMessage()));
+    } catch (RuntimeException malformed) {
+      return new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "依赖服务返回无效错误");
+    }
+    return new BusinessException(ErrorCode.DEPENDENCY_UNAVAILABLE, "依赖服务返回无效错误");
   }
 }

@@ -82,6 +82,8 @@ def check_nacos_console():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--health-only", action="store_true")
+    parser.add_argument("--booking-only", action="store_true", help="Skip health checks for the minimal booking stack")
+    parser.add_argument("--exercise-replicas", action="store_true", help="Book two more slots, reserving the second slot for a failure check")
     parser.add_argument("--dependency-failure", action="store_true", help="Run after stopping patient-service; requires a successful smoke context")
     parser.add_argument("--verify-restored", action="store_true", help="Check appointment count after restoring patient-service")
     parser.add_argument("--context", type=Path, default=ROOT / ".artifacts/week06-smoke-context.json")
@@ -108,10 +110,11 @@ def main():
             print(f"PASS restored booking succeeds: appointments {count} -> {count + 1}")
         return
 
-    check_nacos_console()
-    for name in NAMES:
-        health = request(name, "GET", "/actuator/health")
-        assert health["status"] == "UP", f"{name} is not UP"
+    if not args.booking_only or args.health_only:
+        check_nacos_console()
+        for name in NAMES:
+            health = request(name, "GET", "/actuator/health")
+            assert health["status"] == "UP", f"{name} is not UP"
     if args.health_only:
         print("PASS Nacos console accessible; seven services UP")
         return
@@ -153,6 +156,16 @@ def main():
     assert response["code"] == "RESOURCE_NOT_FOUND"
     assert len(appointments(context, owner_token)) == after
     print(f"PASS missing pet: 404; appointment count stays {after}")
+    if args.exercise_replicas:
+        for offset in (30, 45):
+            extra = dict(booking, startAt=instant(start + timedelta(minutes=offset)),
+                         endAt=instant(end + timedelta(minutes=offset)))
+            response = request("clinic", "POST", "/api/appointment/appointments", extra,
+                               owner_token, 201, "week08-" + uuid.uuid4().hex)
+            assert response["id"] != appointment["id"]
+        assert len(appointments(context, owner_token)) == after + 2
+        after += 2
+        print(f"PASS two additional bookings; appointments={after}")
     context["appointmentCount"] = after
     args.context.parent.mkdir(parents=True, exist_ok=True)
     args.context.write_text(json.dumps(context, ensure_ascii=False, indent=2), encoding="utf-8")

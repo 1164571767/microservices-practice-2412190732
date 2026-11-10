@@ -111,10 +111,10 @@ services:
       start_period: 90s
     stop_grace_period: 30s
     restart: unless-stopped
-  patient-service:
+  patient-service: &patient-service
     build:
       context: ./services/patient-service
-    image: petcare-patient:week07
+    image: petcare-patient:week08
     ports:
     - 127.0.0.1:8082:8080
     environment:
@@ -163,10 +163,14 @@ services:
       start_period: 90s
     stop_grace_period: 30s
     restart: unless-stopped
+  patient-replica:
+    <<: *patient-service
+    profiles: [week08]
+    ports: []
   clinic-service:
     build:
       context: ./services/clinic-service
-    image: petcare-clinic:week07
+    image: petcare-clinic:week08
     ports:
     - 127.0.0.1:8083:8080
     environment:

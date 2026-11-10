@@ -5,12 +5,16 @@ import com.zjgsu.sfy.integration.*;
 import com.zjgsu.sfy.medical.*;
 import com.zjgsu.sfy.owner.*;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class PatientInternalController {
 
+  private static final Logger log = LoggerFactory.getLogger(PatientInternalController.class);
   private final OwnerApi api;
 
   public PatientInternalController(OwnerApi api) {
@@ -23,8 +27,10 @@ public class PatientInternalController {
   }
 
   @PostMapping("/internal/patients/pets/{id}/admission")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
   public void admission(@PathVariable UUID id) {
     api.requireActivePetForBooking(id);
+    log.info("Booking admission accepted petId={}", id);
   }
 
   @GetMapping("/internal/patients/owners/by-user/{id}")

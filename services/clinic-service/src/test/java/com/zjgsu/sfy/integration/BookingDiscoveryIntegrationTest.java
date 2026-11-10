@@ -31,8 +31,58 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest
 class BookingDiscoveryIntegrationTest {
   @Autowired AppointmentService service;
+  @Autowired PatientHttpClient patient;
   @Autowired AppointmentRepository appointments;
   @MockitoBean DiscoveryClient discovery;
+
+  @Test
+  void admissionUsesTheDiscoveredHttpEndpointAndPreservesBusinessRejections() throws Exception {
+    var pet = UUID.randomUUID();
+    var requests = new java.util.concurrent.atomic.AtomicInteger();
+    var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext(
+        "/internal/patients/pets/" + pet + "/admission",
+        request -> {
+          assertEquals("POST", request.getRequestMethod());
+          assertEquals(
+              "test-only-internal-secret-of-at-least-32-characters",
+              request.getRequestHeaders().getFirst("X-Service-Token"));
+          if (requests.getAndIncrement() == 0) {
+            request.sendResponseHeaders(204, -1);
+          } else {
+            byte[] body =
+                "{\"code\":\"OPERATION_NOT_ALLOWED\",\"message\":\"archived\"}"
+                    .getBytes(StandardCharsets.UTF_8);
+            request.getResponseHeaders().set("Content-Type", "application/json");
+            request.sendResponseHeaders(409, body.length);
+            request.getResponseBody().write(body);
+          }
+          request.close();
+        });
+    server.start();
+    try {
+      when(discovery.getInstances("patient-service")).thenReturn(List.of(instance(server)));
+      patient.requireActivePetForBooking(pet);
+      var error =
+          assertThrows(BusinessException.class, () -> patient.requireActivePetForBooking(pet));
+      assertEquals(ErrorCode.OPERATION_NOT_ALLOWED, error.errorCode());
+      assertEquals("archived", error.getMessage());
+      assertEquals(2, requests.get());
+      when(discovery.getInstances("patient-service")).thenReturn(List.of());
+      assertEquals(
+          ErrorCode.DEPENDENCY_UNAVAILABLE,
+          assertThrows(BusinessException.class, () -> patient.requireActivePetForBooking(pet))
+              .errorCode());
+      when(discovery.getInstances("patient-service"))
+          .thenThrow(new IllegalStateException("offline"));
+      assertEquals(
+          ErrorCode.DEPENDENCY_UNAVAILABLE,
+          assertThrows(BusinessException.class, () -> patient.requireActivePetForBooking(pet))
+              .errorCode());
+    } finally {
+      server.stop(0);
+    }
+  }
 
   @Test
   void instanceDisappearingBetweenPetLookupAndAdmissionCannotSaveAnAppointment() throws Exception {
@@ -61,14 +111,7 @@ class BookingDiscoveryIntegrationTest {
     server.start();
     try {
       when(discovery.getInstances("patient-service"))
-          .thenReturn(
-              List.of(
-                  new DefaultServiceInstance(
-                      "test",
-                      "patient-service",
-                      "127.0.0.1",
-                      server.getAddress().getPort(),
-                      false)))
+          .thenReturn(List.of(instance(server)))
           .thenReturn(List.of());
       var admin = new CurrentUser(UUID.randomUUID(), "admin", Set.of(Role.ADMIN));
       var booking =
@@ -83,5 +126,10 @@ class BookingDiscoveryIntegrationTest {
     } finally {
       server.stop(0);
     }
+  }
+
+  private DefaultServiceInstance instance(HttpServer server) {
+    return new DefaultServiceInstance(
+        "test", "patient-service", "127.0.0.1", server.getAddress().getPort(), false);
   }
 }
